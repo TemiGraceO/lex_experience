@@ -43,30 +43,32 @@ function updateActiveLink() {
   });
 }
 
-// ===== ENHANCED SCROLL REVEAL =====
+// ===== BI-DIRECTIONAL SCROLL REVEAL (UP + DOWN) =====
 const observerOptions = {
   threshold: 0.15,
   rootMargin: "0px 0px -50px 0px"
 };
 
 const fadeObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry, index) => {
+  entries.forEach((entry) => {
+    const el = entry.target;
+    
     if (entry.isIntersecting) {
-      const el = entry.target;
+      // Animate IN when entering viewport
       el.classList.add("visible");
-      
-      // Stagger timeline items
-      if (el.classList.contains("timeline-item")) {
-        el.style.transitionDelay = `${index * 0.1}s`;
-      }
       
       // Apply delay from data-delay attribute
       const delay = el.getAttribute("data-delay");
       if (delay) {
         el.style.setProperty("--delay", delay);
       }
-      
-      fadeObserver.unobserve(el);
+    } else {
+      // Animate OUT when leaving viewport (for UP scroll)
+      if (el.classList.contains("fade-in") || 
+          el.classList.contains("fade-slide-left") || 
+          el.classList.contains("fade-slide-right")) {
+        el.classList.remove("visible");
+      }
     }
   });
 }, observerOptions);
@@ -76,8 +78,12 @@ document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timel
   fadeObserver.observe(el);
 });
 
-// ===== IMAGE SCATTER EFFECT =====
+// ===== IMAGE SCATTER EFFECT (TRIGGER ONCE) =====
 function createScatterEffect(target) {
+  // Prevent multiple triggers
+  if (target.dataset.scattered === "true") return;
+  target.dataset.scattered = "true";
+  
   const rect = target.getBoundingClientRect();
   const particleCount = 25;
   const particlesContainer = document.createElement("div");
@@ -124,7 +130,7 @@ if (heroImageFrame) {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const img = entry.target.querySelector("img");
-        if (img) {
+        if (img && !img.dataset.scattered) {
           createScatterEffect(img);
         }
         imageObserver.unobserve(entry.target);
@@ -208,28 +214,34 @@ function showSuccess() {
 }
 
 // ===== PERFORMANCE OPTIMIZED SCROLL =====
+let rafId;
 window.addEventListener("scroll", () => {
-  if (!ticking) {
-    requestAnimationFrame(updateActiveLink);
-    ticking = true;
-  }
-  setTimeout(() => {
-    ticking = false;
-  }, 100);
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(updateActiveLink);
 }, { passive: true });
 
 // Initial load animations
+updateActiveLink();
+
 if ('IntersectionObserver' in window) {
-  updateActiveLink();
+  // Modern browsers handled by observer
 } else {
-  // Fallback for older browsers
-  document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right").forEach(el => {
-    el.classList.add("visible");
-  });
+  // Fallback: animate everything immediately
+  setTimeout(() => {
+    document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right").forEach(el => {
+      el.classList.add("visible");
+    });
+  }, 100);
 }
 
 // Preload critical images for smooth animations
 const criticalImages = document.querySelectorAll(".hero-image");
 criticalImages.forEach(img => {
-  img.decode().catch(() => {});
+  if (img.complete) {
+    img.style.opacity = "1";
+  } else {
+    img.addEventListener('load', function() {
+      this.style.opacity = "1";
+    });
+  }
 });
