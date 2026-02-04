@@ -1,114 +1,235 @@
-// ===== MOBILE NAV TOGGLE =====
+// ===== ENHANCED MOBILE NAV TOGGLE =====
 const navToggle = document.getElementById("navToggle");
-const navLinks = document.getElementById("navLinks");
-const navLinkEls = document.querySelectorAll(".nav-link");
+const nav = document.getElementById("nav");
+const navLinks = document.querySelectorAll(".nav-link");
 
 navToggle.addEventListener("click", () => {
   document.body.classList.toggle("nav-open");
+  
+  if (document.body.classList.contains("nav-open")) {
+    nav.style.transform = "translateY(0)";
+    nav.style.opacity = "1";
+  } else {
+    nav.style.transform = "translateY(-120%)";
+    nav.style.opacity = "0";
+  }
 });
 
 // Close nav when clicking a link (mobile)
-navLinkEls.forEach((link) => {
+navLinks.forEach(link => {
   link.addEventListener("click", () => {
     document.body.classList.remove("nav-open");
+    nav.style.transform = "translateY(-120%)";
+    nav.style.opacity = "0";
   });
 });
 
 // ===== ACTIVE LINK ON SCROLL =====
 const sections = document.querySelectorAll("section[id]");
+let ticking = false;
 
-function onScroll() {
-  const scrollY = window.scrollY + 120; // offset for header
-  sections.forEach((section) => {
+function updateActiveLink() {
+  const scrollY = window.scrollY + 120;
+  sections.forEach(section => {
     const top = section.offsetTop;
     const height = section.offsetHeight;
     const id = section.getAttribute("id");
 
     if (scrollY >= top && scrollY < top + height) {
-      navLinkEls.forEach((l) => l.classList.remove("active"));
+      navLinks.forEach(l => l.classList.remove("active"));
       const current = document.querySelector(`.nav-link[href="#${id}"]`);
       if (current) current.classList.add("active");
     }
   });
 }
-window.addEventListener("scroll", onScroll);
-onScroll();
 
-// ===== SCROLL REVEAL =====
-const revealEls = document.querySelectorAll(".reveal");
+// ===== ENHANCED SCROLL REVEAL =====
+const observerOptions = {
+  threshold: 0.15,
+  rootMargin: "0px 0px -50px 0px"
+};
 
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
+const fadeObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, index) => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      el.classList.add("visible");
+      
+      // Stagger timeline items
+      if (el.classList.contains("timeline-item")) {
+        el.style.transitionDelay = `${index * 0.1}s`;
       }
-    });
-  },
-  { threshold: 0.12 }
-);
-
-revealEls.forEach((el) => observer.observe(el));
-
-// ===== FORM VALIDATION =====
-const form = document.getElementById("regForm");
-const successEl = document.getElementById("formSuccess");
-
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  // Reset errors
-  successEl.classList.add("hidden");
-  form.querySelectorAll(".form-group").forEach((group) => {
-    group.classList.remove("error");
-    const err = group.querySelector(".error");
-    if (err) err.textContent = "";
+      
+      // Apply delay from data-delay attribute
+      const delay = el.getAttribute("data-delay");
+      if (delay) {
+        el.style.setProperty("--delay", delay);
+      }
+      
+      fadeObserver.unobserve(el);
+    }
   });
+}, observerOptions);
 
-  let valid = true;
-
-  const name = form.name.value.trim();
-  const email = form.email.value.trim();
-  const school = form.school.value.trim();
-  const role = form.role.value;
-
-  if (!name) {
-    showError("name", "Tell us who you are.");
-    valid = false;
-  }
-
-  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-    showError("email", "We need a valid email to reach you.");
-    valid = false;
-  }
-
-  if (!school) {
-    showError("school", "Where are you representing?");
-    valid = false;
-  }
-
-  if (!role) {
-    showError("role", "Pick what best describes you.");
-    valid = false;
-  }
-
-  if (!valid) return;
-
-  // Success state (demo only)
-  form.reset();
-  successEl.classList.remove("hidden");
-
-  setTimeout(() => {
-    successEl.classList.add("hidden");
-  }, 6000);
+// Observe all fade elements
+document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]").forEach(el => {
+  fadeObserver.observe(el);
 });
 
-function showError(fieldName, message) {
-  const field = form.querySelector(`[name="${fieldName}"]`);
-  const group = field.closest(".form-group");
-  if (!group) return;
-  group.classList.add("error");
-  const err = group.querySelector(".error");
-  if (err) err.textContent = message;
+// ===== IMAGE SCATTER EFFECT =====
+function createScatterEffect(target) {
+  const rect = target.getBoundingClientRect();
+  const particleCount = 25;
+  const particlesContainer = document.createElement("div");
+  particlesContainer.className = "scatter-particles";
+  
+  target.parentElement.style.position = "relative";
+  target.parentElement.appendChild(particlesContainer);
+  
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement("div");
+    particle.className = "particle";
+    particle.style.width = `${Math.random() * 8 + 4}px`;
+    particle.style.height = particle.style.width;
+    particle.style.left = `${Math.random() * rect.width}px`;
+    particle.style.top = `${Math.random() * rect.height}px`;
+    
+    // Random scatter direction and distance
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 150 + Math.random() * 200;
+    particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`);
+    particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`);
+    
+    particle.style.animationDelay = `${Math.random() * 0.2}s`;
+    particlesContainer.appendChild(particle);
+  }
+  
+  // Activate particles with smooth delay
+  setTimeout(() => {
+    particlesContainer.classList.add("active");
+    
+    // Clean up particles after animation completes
+    setTimeout(() => {
+      if (particlesContainer.parentNode) {
+        particlesContainer.parentNode.removeChild(particlesContainer);
+      }
+    }, 2000);
+  }, 1000);
 }
+
+// Trigger scatter effect on hero image when 70% visible
+const heroImageFrame = document.querySelector(".scatter-effect");
+if (heroImageFrame) {
+  const imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target.querySelector("img");
+        if (img) {
+          createScatterEffect(img);
+        }
+        imageObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.7 });
+  
+  imageObserver.observe(heroImageFrame);
+}
+
+// ===== ENHANCED FORM VALIDATION =====
+const registerForm = document.getElementById("registerForm");
+const formSuccess = document.getElementById("formSuccess");
+
+registerForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  
+  const isValid = validateForm();
+  
+  if (isValid) {
+    showSuccess();
+  }
+});
+
+function validateForm() {
+  const fields = [
+    { name: "name", message: "Please enter your full name." },
+    { name: "email", message: "Please enter a valid email address.", validator: email => /^\S+@\S+\.\S+$/.test(email) },
+    { name: "school", message: "Please enter your institution." },
+    { name: "role", message: "Please select your role." }
+  ];
+  
+  let isValid = true;
+  
+  fields.forEach(field => {
+    const input = registerForm.querySelector(`[name="${field.name}"]`);
+    const group = input.closest(".form-group");
+    const errorEl = group.querySelector(".error-message");
+    
+    // Clear previous state
+    group.classList.remove("error");
+    errorEl.textContent = "";
+    
+    const value = input.value.trim();
+    
+    if (!value || (field.validator && !field.validator(value))) {
+      showFieldError(input, field.message);
+      isValid = false;
+      
+      // Shake animation for invalid fields
+      group.style.animation = "shake 0.5s ease-in-out";
+      setTimeout(() => {
+        group.style.animation = "";
+      }, 500);
+    }
+  });
+  
+  return isValid;
+}
+
+function showFieldError(field, message) {
+  const group = field.closest(".form-group");
+  const errorEl = group.querySelector(".error-message");
+  
+  group.classList.add("error");
+  errorEl.textContent = message;
+}
+
+function showSuccess() {
+  registerForm.reset();
+  formSuccess.hidden = false;
+  formSuccess.style.animation = "fadeInUp 0.5s ease-out";
+  
+  // Scroll to success message
+  formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  setTimeout(() => {
+    formSuccess.hidden = true;
+    formSuccess.style.animation = "";
+  }, 5000);
+}
+
+// ===== PERFORMANCE OPTIMIZED SCROLL =====
+window.addEventListener("scroll", () => {
+  if (!ticking) {
+    requestAnimationFrame(updateActiveLink);
+    ticking = true;
+  }
+  setTimeout(() => {
+    ticking = false;
+  }, 100);
+}, { passive: true });
+
+// Initial load animations
+if ('IntersectionObserver' in window) {
+  updateActiveLink();
+} else {
+  // Fallback for older browsers
+  document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right").forEach(el => {
+    el.classList.add("visible");
+  });
+}
+
+// Preload critical images for smooth animations
+const criticalImages = document.querySelectorAll(".hero-image");
+criticalImages.forEach(img => {
+  img.decode().catch(() => {});
+});
