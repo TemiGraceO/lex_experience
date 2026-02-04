@@ -975,9 +975,7 @@ body {
   .header-inner {
     padding-block: 0.6rem;
   }
-  #home{
-  margin-top: -8%;
-  }
+ 
   .nav-toggle {
     display: inline-flex;
   }
