@@ -73,9 +73,7 @@ body {
 .section-alt {
   background: radial-gradient(circle at top, #181b26 0, #050608 55%);
 }
-#home{
-  margin-top: -8%;
-}
+
 .section-kicker {
   font-size: 0.9rem;
   letter-spacing: 0.16em;
@@ -954,6 +952,7 @@ body {
   .section-cta-inner {
     grid-template-columns: minmax(0, 1fr);
   }
+
   .hero-art {
     justify-content: center;
   }
@@ -975,7 +974,7 @@ body {
   .header-inner {
     padding-block: 0.6rem;
   }
- 
+
   .nav-toggle {
     display: inline-flex;
   }
