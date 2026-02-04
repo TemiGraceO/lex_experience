@@ -954,9 +954,6 @@ body {
   .section-cta-inner {
     grid-template-columns: minmax(0, 1fr);
   }
-  #home{
-  margin-top: -8%;
-  }
   .hero-art {
     justify-content: center;
   }
@@ -978,7 +975,9 @@ body {
   .header-inner {
     padding-block: 0.6rem;
   }
-
+  #home{
+  margin-top: -8%;
+  }
   .nav-toggle {
     display: inline-flex;
   }
