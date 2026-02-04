@@ -955,7 +955,7 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
   #home{
-  margin-top: -10%;
+  margin-top: -8%;
   }
   .hero-art {
     justify-content: center;
