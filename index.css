@@ -73,7 +73,9 @@ body {
 .section-alt {
   background: radial-gradient(circle at top, #181b26 0, #050608 55%);
 }
-
+#home{
+  margin-top: -8%;
+}
 .section-kicker {
   font-size: 0.9rem;
   letter-spacing: 0.16em;
