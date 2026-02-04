@@ -452,17 +452,7 @@ body {
   justify-content: flex-end;
 }
 
-.hero-image-frame {
-  position: relative;
-  width: min(360px, 100%);
-  aspect-ratio: 3 / 4;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: radial-gradient(circle at top, #f7de50, #433814 60%, #050608 100%);
-  box-shadow: var(--shadow-soft);
-  transform: translateY(4px);
-  transition: transform 0.3s ease;
-}
+
 
 .hero-image-frame:hover {
   transform: translateY(0) scale(1.02);
