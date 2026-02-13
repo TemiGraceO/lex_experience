@@ -283,7 +283,7 @@ payBtn.addEventListener("click", () => {
     alert("🎉 Payment successful! Transaction reference: " + response.reference);
 
     // Send confirmation email
-    fetch('https://lex-experience.vercel.app/api/send-confirmation', {
+    fetch('http://localhost:3000/api/send-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
