@@ -8,9 +8,9 @@ const app = express();
 app.use(bodyParser.json());
 
 // ⚠️ REPLACE THESE WITH YOUR ACTUAL DETAILS
-const PAYSTACK_SECRET_KEY = "sk_test_fdee842fa175444c2e87ef45bd710104c894358a"; 
-const EMAIL_USER = "your-email@gmail.com";      // Your Gmail address
-const EMAIL_PASS = "your-app-password";          // Your Gmail App Password (16 chars)
+const PAYSTACK_SECRET_KEY = "pk_test_fdee842fa175444c2e87ef45bd710104c894358a"; 
+const EMAIL_USER = "graceolorunfemi96@gmail.com";      // Your Gmail address
+const EMAIL_PASS = "mlursnupwpnfhxma";          // Your Gmail App Password (16 chars)
 
 // Nodemailer Transporter (Configures how to send email)
 const transporter = nodemailer.createTransport({
