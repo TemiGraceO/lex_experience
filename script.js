@@ -1,4 +1,5 @@
 // ===== ENHANCED MOBILE NAV TOGGLE =====
+
 const navToggle = document.getElementById("navToggle");
 const nav = document.getElementById("nav");
 const navLinks = document.querySelectorAll(".nav-link");
@@ -245,3 +246,93 @@ criticalImages.forEach(img => {
     });
   }
 });
+// ================= PAYMENT FLOW =================
+const schoolSelect = document.getElementById("school");
+const paymentSection = document.getElementById("paymentSection");
+const paymentText = document.getElementById("paymentText");
+const payBtn = document.getElementById("payBtn");
+
+const innovateSection = document.getElementById("innovateSection");
+const innovateYes = document.getElementById("innovateYes");
+const innovateNo = document.getElementById("innovateNo");
+
+let baseAmount = 0;
+
+
+// Show payment when ABU / Non-ABU is chosen
+schoolSelect.addEventListener("change", () => {
+  const value = schoolSelect.value;
+
+  if (!value) {
+    paymentSection.style.display = "none";
+    return;
+  }
+
+  if (value === "yes") {
+    baseAmount = 10000;
+    paymentText.textContent = "ABU Student Ticket: ₦10,000";
+  } else {
+    baseAmount = 15000;
+    paymentText.textContent = "Non-ABU Student Ticket: ₦15,000";
+  }
+
+  paymentSection.style.display = "block";
+});
+
+
+// ===== FIRST PAYMENT =====
+payBtn.addEventListener("click", () => {
+  const email = document.getElementById("email").value;
+  const name = document.getElementById("name").value;
+
+  if (!email || !name) {
+    alert("Please fill your name and email first.");
+    return;
+  }
+
+  payWithPaystack(baseAmount, email, () => {
+    // After success
+    paymentSection.style.display = "none";
+    innovateSection.style.display = "block";
+  });
+});
+
+
+// ===== LEX INNOVATE =====
+innovateYes.addEventListener("click", () => {
+  const email = document.getElementById("email").value;
+
+  payWithPaystack(12000, email, () => {
+    alert("🎉 Payment complete! You are registered for Lex Innovate.");
+    innovateSection.style.display = "none";
+    showSuccess(); // your existing success function
+  });
+});
+
+
+innovateNo.addEventListener("click", () => {
+  alert("🎉 Registration complete!");
+  innovateSection.style.display = "none";
+  showSuccess();
+});
+
+
+// ===== PAYSTACK FUNCTION =====
+function payWithPaystack(amount, email, callback) {
+  let handler = PaystackPop.setup({
+    key: "YOUR_PUBLIC_KEY_HERE", // replace with your key
+    email: email,
+    amount: amount * 100, // convert to kobo
+    currency: "NGN",
+
+    callback: function(response) {
+      callback(response);
+    },
+
+    onClose: function() {
+      alert("Payment window closed.");
+    }
+  });
+
+  handler.openIframe();
+}

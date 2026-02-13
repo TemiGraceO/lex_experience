@@ -263,6 +263,12 @@
             <option value="no">No, I am not an ABU student</option>
           <small class="error-message"></small>
         </div>
+        <div class="form-group fade-in" data-delay="0.4s">
+          <label for="role">I am a<span>*</span></label>
+          <select id="role" name="role" required>
+          </select>
+          <small class="error-message"></small>
+        </div>
         <div class="form-group fade-in" data-delay="0.5s">
           <label for="interest">Area of Interest</label>
           <textarea
@@ -272,7 +278,20 @@
             placeholder="Tell us what you're most excited to explore..."
           ></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-block fade-in" data-delay="0.6s">Submit Registration</button>
+        <!-- PAYMENT AREA -->
+<div class="form-group" id="paymentSection" style="display:none;">
+  <p id="paymentText"></p>
+  <button type="button" class="btn btn-primary btn-block" id="payBtn">
+    Proceed to Payment
+  </button>
+</div>
+
+<!-- LEX INNOVATE -->
+<div class="form-group" id="innovateSection" style="display:none;">
+  <p>Would you like to participate in Lex Innovate for ₦12,000?</p>
+  <button type="button" class="btn btn-outline btn-block" id="innovateYes">Yes</button>
+  <button type="button" class="btn btn-outline btn-block" id="innovateNo">No</button>
+</div>
         <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
         <p class="form-success" id="formSuccess" hidden>
           Thank you for registering! We've received your details and will contact you shortly.
@@ -325,5 +344,6 @@
   </footer>
 
   <script src="script.js"></script>
+  
 </body>
 </html>
