@@ -246,6 +246,8 @@ function payWithPaystack(amount, email, callback) {
     email: email,
     amount: amount * 100, // Convert Naira to Kobo
     currency: "NGN",
+    theme: {
+    color: "#f7de50" },
     callback: function(response) {
       console.log("Payment Success:", response);
       callback(response);
