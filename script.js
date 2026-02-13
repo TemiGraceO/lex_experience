@@ -281,6 +281,26 @@ payBtn.addEventListener("click", () => {
   console.log("Initiating Paystack for:", baseAmount);
   payWithPaystack(baseAmount, email, (response) => {
     alert("🎉 Payment successful! Transaction reference: " + response.reference);
+
+    // Send confirmation email
+    fetch('http://localhost:3000/api/send-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            reference: response.reference,
+            email: email,
+            name: document.getElementById('name').value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log("Confirmation email sent!");
+        } else {
+            console.error("Failed to send email:", data.message);
+        }
+    })
+    .catch(err => console.error(err));
     innovateSection.style.display = "block";
     paymentSection.style.display = "none";
     // showSuccess(); // Don't show success yet, wait for Innovate choice

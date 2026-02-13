@@ -44,7 +44,7 @@ app.post('/api/send-confirmation', async (req, res) => {
 
         // 2. Send the Confirmation Email
         const mailOptions = {
-            from: '"Lex Xperience Team" <your-email@gmail.com>',
+            from: '"Lex Xperience Team" <graceolorunfemi96@gmail.com>',
             to: email,
             subject: "Registration Confirmed: Lex Xperience 2026 🎉",
             html: `
