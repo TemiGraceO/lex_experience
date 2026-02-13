@@ -470,7 +470,7 @@ body {
 
 
 
-.hero-image-frame:hover {
+.hero-image:hover {
   transform: translateY(0) scale(1.02);
 }
 
