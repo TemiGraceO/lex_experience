@@ -8,7 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // ⚠️ REPLACE THESE WITH YOUR ACTUAL DETAILS
-const PAYSTACK_SECRET_KEY = "pk_test_fdee842fa175444c2e87ef45bd710104c894358a"; 
+const PAYSTACK_SECRET_KEY = "sk_test_c19274b06e0b4b223ac4216f82aa230dfecb7b8c"; 
 const EMAIL_USER = "graceolorunfemi96@gmail.com";      // Your Gmail address
 const EMAIL_PASS = "mlursnupwpnfhxma";          // Your Gmail App Password (16 chars)
 

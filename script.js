@@ -283,7 +283,7 @@ payBtn.addEventListener("click", () => {
     alert("🎉 Payment successful! Transaction reference: " + response.reference);
 
     // Send confirmation email
-    fetch('http://localhost:3000/api/send-confirmation', {
+    fetch('https://lex-backend.onrender.com/api/send-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
