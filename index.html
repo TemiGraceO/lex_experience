@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lex Xperience | Law, Innovation & Northern Excellence</title>
   <link rel="stylesheet" href="index.css" />
+  <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
   <!-- HEADER / NAVBAR -->
@@ -256,28 +257,34 @@
           <small class="error-message"></small>
         </div>
         <div class="form-group fade-in" data-delay="0.3s">
-          <label for="school">Are you a student of Ahmadu Bello University?<span>*</span></label>
-          <select id="school" name="school" required>
-            <option value="">Select an option</option>
-            <option value="yes">Yes, I am an ABU student</option>
-            <option value="no">No, I am not an ABU student</option>
-          <small class="error-message"></small>
-        </div>
-        <div class="form-group fade-in" data-delay="0.4s">
-          <label for="role">I am a<span>*</span></label>
-          <select id="role" name="role" required>
-          </select>
-          <small class="error-message"></small>
-        </div>
-        <div class="form-group fade-in" data-delay="0.5s">
-          <label for="interest">Area of Interest</label>
-          <textarea
-            id="interest"
-            name="interest"
-            rows="3"
-            placeholder="Tell us what you're most excited to explore..."
-          ></textarea>
-        </div>
+  <label for="school">Are you a student of Ahmadu Bello University?<span>*</span></label>
+  <select id="school" name="school" required>
+    <option value="">Select an option</option>
+    <option value="yes">Yes, I am an ABU student</option>
+    <option value="no">No, I am not an ABU student</option>
+  </select>
+  <small class="error-message"></small>
+</div>
+
+<!-- ABU REG NUMBER (hidden until YES) -->
+<div class="form-group fade-in" id="regSection" style="display:none;">
+  <label for="regNumber">ABU Registration Number<span>*</span></label>
+  <input type="text" id="regNumber" placeholder="e.g. U19CO1017" />
+  <small class="error-message" id="regError"></small>
+  <small id="verifyStatus" style="color:#f7de50;"></small>
+</div>
+
+<!-- INTEREST -->
+<div class="form-group fade-in" data-delay="0.5s">
+  <label for="interest">What are you most excited to explore?</label>
+  <textarea
+    id="interest"
+    name="interest"
+    rows="3"
+    placeholder="Tell us what you're most excited to explore..."
+  ></textarea>
+</div>
+
         <!-- PAYMENT AREA -->
 <div class="form-group" id="paymentSection" style="display:none;">
   <p id="paymentText"></p>
