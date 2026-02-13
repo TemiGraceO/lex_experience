@@ -986,6 +986,9 @@ body {
     display: inline-flex;
   }
 
+  #home{
+    margin-top: -6%;
+  }
   .nav {
     position: fixed;
     inset: 3.4rem 0 auto 0;
