@@ -1013,7 +1013,7 @@ body {
   }
 
   .nav-link {
-    padding: 0.4rem 0.1rem;
+    padding: 0.3rem 0.4rem;
   }
 
   .nav-link::after,
@@ -1024,6 +1024,7 @@ body {
   .nav-cta {
     align-self: flex-start;
     margin-top: 0.3rem;
+
   }
 
   .hero-meta {
