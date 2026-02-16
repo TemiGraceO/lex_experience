@@ -307,12 +307,12 @@
   <small class="error-message"></small>
 </div>
 
-<!-- ABU REG NUMBER (hidden until YES) -->
+<!-- ABU ID card (hidden until YES) -->
 <div class="form-group fade-in" id="regSection" style="display:none;">
-  <label for="regNumber">ABU Registration Number<span>*</span></label>
-  <input type="text" id="regNumber" placeholder="e.g. U14CO1017" />
-  <small class="error-message" id="regError"></small>
-  <small id="verifyStatus" style="color:#f7de50;"></small>
+  <label for="idCard">Upload Your ABU ID Card (JPG/PNG/PDF)<span>*</span></label>
+  <input type="file" id="idCard" accept=".jpg,.jpeg,.png,.pdf" required>
+  <small class="form-footnote">Max file size: 5MB</small>
+  <small class="error-message" id="idError"></small>
 </div>
 
 <!-- INTEREST -->
