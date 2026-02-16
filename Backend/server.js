@@ -1,11 +1,54 @@
 // server.js
+require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const cors = require('cors');
+const registerRoutes = require('./routes/register')
 
 const app = express();
-app.use(bodyParser.json());
+app.use(cors({ 
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true 
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB connected successfully'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// Routes
+app.use('/api', registerRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Lex Xperience API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: "Route not found" 
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({ 
+    success: false, 
+    message: "Internal server error" 
+  });
+});
 
 // ⚠️ REPLACE THESE WITH YOUR ACTUAL DETAILS
 const PAYSTACK_SECRET_KEY = "sk_test_c19274b06e0b4b223ac4216f82aa230dfecb7b8c"; 
@@ -69,4 +112,9 @@ app.post('/api/send-confirmation', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 API available at: http://localhost:${PORT}/api`);
+});
