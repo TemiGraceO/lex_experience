@@ -309,9 +309,11 @@
 
 <!-- ABU ID card (hidden until YES) -->
 <div class="form-group fade-in" id="regSection" style="display:none;">
-  <label for="regNumber">Upload Your ABU ID Card (JPG/PNG/PDF)<span>*</span></label>
+  <label for="regNumber">Upload Your ABU ID Card or Admission Letter(JPG/PNG/PDF)<span>*</span></label>
   <input type="file" id="regNumber" accept=".jpg,.jpeg,.png,.pdf"/>
   <small class="form-footnote">Max file size: 5MB</small>
+  <small id="verifyStatus" style="color:#f7de50; display:block; margin-top:0.5rem;"></small>
+  <small class="error-message" id="idError"></small>
 </div>
 
 <!-- INTEREST -->

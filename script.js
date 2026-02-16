@@ -14,9 +14,9 @@ const paymentText = document.getElementById("paymentText");
 const payBtn = document.getElementById("payBtn");
 
 const regSection = document.getElementById("regSection");
-const regNumberInput = document.getElementById("regNumber");
-const regError = document.getElementById("regError");
+const regNumberInput = document.getElementById("regNumber"); // Now file input
 const verifyStatus = document.getElementById("verifyStatus");
+const idError = document.getElementById("idError");
 
 const innovateSection = document.getElementById("innovateSection");
 const innovateYes = document.getElementById("innovateYes");
@@ -25,9 +25,44 @@ const innovateNo = document.getElementById("innovateNo");
 let baseAmount = 0;
 let abuVerified = false;
 let rafId;
+let uploadedFile = null;
 
-// ⚠️ TEST MODE: Set this to TRUE to bypass the backend verification for testing
+// ⚠️ TEST MODE: Set to FALSE when you have backend ready for file verification
 const MOCK_VERIFICATION_MODE = true; 
+
+// =========================
+// ===== FORM VALIDITY CHECKER =====
+function checkFormValidity() {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const school = schoolSelectEl.value;
+  const hasFile = uploadedFile !== null;
+  
+  let isValid = false;
+  
+  // Check basic fields
+  if (name && email && school) {
+    if (school === "yes") {
+      // ABU student: needs file upload AND verification
+      isValid = hasFile && abuVerified;
+    } else {
+      // Non-ABU student: just needs basic fields
+      isValid = true;
+    }
+  }
+  
+  // Enable/disable button
+  payBtn.disabled = !isValid;
+  
+  // Visual feedback
+  if (isValid) {
+    payBtn.style.opacity = "1";
+    payBtn.style.cursor = "pointer";
+  } else {
+    payBtn.style.opacity = "0.6";
+    payBtn.style.cursor = "not-allowed";
+  }
+}
 
 // =========================
 // ===== MOBILE NAV TOGGLE =====
@@ -106,7 +141,6 @@ function validateForm() {
   let isValid = true;
   fields.forEach(field => {
     const input = registerForm.querySelector(`[name="${field.name}"]`);
-    // Handle select inputs differently if needed, but querySelector works for value
     const group = input.closest(".form-group");
     const errorEl = group.querySelector(".error-message");
     group.classList.remove("error");
@@ -124,10 +158,17 @@ function validateForm() {
 
 function showSuccess() {
   registerForm.reset();
+  uploadedFile = null;
+  abuVerified = false;
   formSuccess.hidden = false;
   formSuccess.style.animation = "fadeInUp 0.5s ease-out";
   formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => { formSuccess.hidden = true; formSuccess.style.animation = ""; }, 5000);
+  setTimeout(() => { 
+    formSuccess.hidden = true; 
+    formSuccess.style.animation = ""; 
+    payBtn.disabled = true;
+    payBtn.style.opacity = "0.6";
+  }, 5000);
 }
 
 // =========================
@@ -138,6 +179,7 @@ schoolSelectEl.addEventListener("change", () => {
   if (!value) {
     paymentSection.style.display = "none";
     regSection.style.display = "none";
+    checkFormValidity();
     return;
   }
 
@@ -146,115 +188,149 @@ schoolSelectEl.addEventListener("change", () => {
     paymentText.textContent = "ABU Student Ticket: ₦5,000";
     regSection.style.display = "block";
     abuVerified = false;
-    payBtn.disabled = true; // Start disabled until verified
-    verifyStatus.textContent = "Please enter your Reg Number to verify.";
-    verifyStatus.style.color = "#333";
+    uploadedFile = null;
+    verifyStatus.textContent = "Please upload your ABU ID card or Admission Letter to verify eligibility.";
+    verifyStatus.style.color = "#f7de50";
+    idError.textContent = "";
+    payBtn.disabled = true;
+    payBtn.style.opacity = "0.6";
   } else {
     baseAmount = 12000;
     paymentText.textContent = "Non-ABU Student Ticket: ₦12,000";
     regSection.style.display = "none";
-    abuVerified = true; // No verification needed
-    payBtn.disabled = false;
+    abuVerified = true; // No verification needed for non-ABU
     verifyStatus.textContent = "";
-    regError.textContent = "";
+    idError.textContent = "";
+    payBtn.disabled = false;
+    payBtn.style.opacity = "1";
   }
 
   paymentSection.style.display = "block";
+  checkFormValidity();
 });
 
 // =========================
-// ===== VERIFY ABU STUDENT =====
-regNumberInput.addEventListener("input", () => {
-    // Optional: Re-verify on typing if you want, but blur is fine
-});
-regNumberInput.addEventListener("blur", verifyABUStudent);
+// ===== FILE UPLOAD HANDLING =====
+regNumberInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  
+  if (!file) {
+    uploadedFile = null;
+    abuVerified = false;
+    checkFormValidity();
+    return;
+  }
 
-function verifyABUStudent() {
-  const name = document.getElementById("name").value.trim();
-  const regNumber = regNumberInput.value.trim();
+  // Validate file size (5MB max)
+  if (file.size > 5 * 1024 * 1024) {
+    idError.textContent = "File too large. Maximum size is 5MB.";
+    verifyStatus.textContent = "";
+    uploadedFile = null;
+    abuVerified = false;
+    checkFormValidity();
+    return;
+  }
 
-  if (!name || !regNumber) return;
+  // Validate file type
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+  if (!validTypes.includes(file.type)) {
+    idError.textContent = "Invalid file type. Please upload JPG, PNG, or PDF.";
+    verifyStatus.textContent = "";
+    uploadedFile = null;
+    abuVerified = false;
+    checkFormValidity();
+    return;
+  }
 
-  verifyStatus.textContent = "Checking student record...";
+  // File is valid
+  uploadedFile = file;
+  idError.textContent = "";
+  verifyStatus.textContent = "File selected. Verifying...";
   verifyStatus.style.color = "#333";
-  payBtn.disabled = true;
+  
+  // Trigger verification
+  verifyIDCard(file);
+});
 
-  // ⚠️ MOCK MODE LOGIC
+// =========================
+// ===== VERIFY ID CARD =====
+function verifyIDCard(file) {
   if (MOCK_VERIFICATION_MODE) {
-    console.log("⚠️ MOCK MODE: Skipping real API call.");
+    // Simulate verification delay
     setTimeout(() => {
-      // Simulate success for testing
       abuVerified = true;
-      verifyStatus.textContent = "✅ Verified (Mock Mode). You can proceed.";
+      verifyStatus.textContent = "✅ ID uploaded successfully. You can proceed to payment.";
       verifyStatus.style.color = "green";
-      regError.textContent = "";
-      payBtn.disabled = false;
+      checkFormValidity();
     }, 1000);
     return;
   }
 
-  // ⚠️ REAL API LOGIC (Uncomment when you have a backend)
-  /*
-  fetch("https://yourserver.com/api/verify-student", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, regNumber })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.valid) {
-        abuVerified = true;
-        verifyStatus.textContent = "✅ Verified. Proceed to payment.";
-        verifyStatus.style.color = "green";
-        regError.textContent = "";
-        payBtn.disabled = false;
-      } else {
-        handleVerificationFail("Name and registration number do not match.");
-      }
-    })
-    .catch(() => {
-      handleVerificationFail("Unable to connect to verification server.");
-    });
-  */
+  // REAL BACKEND VERIFICATION
+  const formData = new FormData();
+  formData.append('idCard', file);
+  formData.append('name', document.getElementById("name").value.trim());
+  formData.append('email', document.getElementById("email").value.trim());
 
-  function handleVerificationFail(msg) {
+  fetch("https://lex-backend.onrender.com/api/verify-id", {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.valid) {
+      abuVerified = true;
+      verifyStatus.textContent = "✅ ID verified. Proceed to payment.";
+      verifyStatus.style.color = "green";
+      checkFormValidity();
+    } else {
       abuVerified = false;
       verifyStatus.textContent = "";
-      regError.textContent = msg;
-      payBtn.disabled = true;
-  }
+      idError.textContent = data.message || "ID verification failed. Please ensure it's a clear photo of your ABU ID card.";
+      checkFormValidity();
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    abuVerified = false;
+    verifyStatus.textContent = "Verification service unavailable. Please try again.";
+    verifyStatus.style.color = "red";
+    checkFormValidity();
+  });
 }
+
+// =========================
+// ===== REAL-TIME VALIDATION LISTENERS =====
+// Check validity whenever user types in required fields
+document.getElementById("name").addEventListener("input", checkFormValidity);
+document.getElementById("email").addEventListener("input", checkFormValidity);
 
 // =========================
 // ===== PAYSTACK PAYMENT =====
 function payWithPaystack(amount, email, callback) {
-  // 1. Check if Paystack is loaded
   if (typeof PaystackPop === 'undefined') {
     alert("Payment system is loading. Please wait a moment and try again.");
-    console.error("PaystackPop is not defined. Check internet connection or script load.");
+    console.error("PaystackPop is not defined.");
     return;
   }
 
-  // 2. Validate Amount
   if (amount <= 0) {
     alert("Invalid ticket amount.");
     return;
   }
 
   let handler = PaystackPop.setup({
-    key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a", // ⚠️ Rotate this key if you share code publicly
+    key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
     email: email,
-    amount: amount * 100, // Convert Naira to Kobo
+    amount: amount * 100,
     currency: "NGN",
-    theme: {
-    color: "#f7de50" },
+    theme: { color: "#f7de50" },
     callback: function(response) {
       console.log("Payment Success:", response);
       callback(response);
     },
     onClose: function() { 
       console.log("Payment Closed");
-      // Don't alert here, it's annoying if they just clicked away
     }
   });
   
@@ -263,8 +339,6 @@ function payWithPaystack(amount, email, callback) {
 
 // First Payment (Main Ticket)
 payBtn.addEventListener("click", () => {
-  console.log("Pay Button Clicked"); // Debug Log
-  
   const email = document.getElementById("email").value.trim();
   const name = document.getElementById("name").value.trim();
 
@@ -274,9 +348,12 @@ payBtn.addEventListener("click", () => {
   }
 
   if (schoolSelectEl.value === "yes" && !abuVerified) {
-    alert("Please verify your ABU registration number first.");
+    alert("Please upload and verify your ABU ID card first.");
     return;
   }
+
+  // Save to Google Sheets (if you have the URL set up)
+  // saveToGoogleSheets(name, email, uploadedFile?.name || "No file");
 
   console.log("Initiating Paystack for:", baseAmount);
   payWithPaystack(baseAmount, email, (response) => {
@@ -289,7 +366,9 @@ payBtn.addEventListener("click", () => {
         body: JSON.stringify({
             reference: response.reference,
             email: email,
-            name: document.getElementById('name').value
+            name: name,
+            school: schoolSelectEl.value,
+            idFileName: uploadedFile?.name || "N/A"
         })
     })
     .then(res => res.json())
@@ -301,9 +380,9 @@ payBtn.addEventListener("click", () => {
         }
     })
     .catch(err => console.error(err));
+    
     innovateSection.style.display = "block";
     paymentSection.style.display = "none";
-    // showSuccess(); // Don't show success yet, wait for Innovate choice
   });
 });
 
