@@ -6,7 +6,12 @@ from schemas import RegistrationSchema
 from utils import verify_payment
 import shutil, os
 from typing import Optional
+from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException, Header
 
+
+
+ADMIN_SECRET = "lex2026onlyme"
 app = FastAPI()
 
 # CORS (allow frontend connection)
@@ -34,7 +39,7 @@ async def register(
     print("Email:", email)
     print("ABU Student:", abu_student)
     print("Reference:", paystack_ref)
-    
+
     # Verify payment
     if not verify_payment(paystack_ref):
         return JSONResponse(status_code=400, content={"message": "Payment not verified."})
@@ -62,3 +67,10 @@ async def register(
 def get_registrations():
     # For admin / testing purposes
     return [r.dict() for r in registrations]
+
+@app.get("/admin/registrations")
+async def get_registrations(x_admin_key: str = Header(...)):
+    if x_admin_key != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    return registrations

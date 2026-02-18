@@ -77,13 +77,6 @@ navToggle.addEventListener("click", () => {
   }
 });
 
-navLinks.forEach(link => {
-  link.addEventListener("click", () => {
-    document.body.classList.remove("nav-open");
-    nav.style.transform = "translateY(-120%)";
-    nav.style.opacity = "0";
-  });
-});
 
 // =========================
 // ===== ACTIVE LINK ON SCROLL =====
