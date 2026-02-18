@@ -401,3 +401,36 @@ innovateNo.addEventListener("click", () => {
   innovateSection.style.display = "none";
   showSuccess();
 });
+const form = document.getElementById("registerForm");
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const school = document.getElementById("school").value;
+  const fileInput = document.getElementById("regNumber");
+
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("email", email);
+  formData.append("abu_student", school === "yes");
+  formData.append("paystack_ref", "test_reference"); // replace later with real Paystack ref
+
+  if (fileInput.files.length > 0) {
+    formData.append("file", fileInput.files[0]);
+  }
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/register", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    alert(data.message);
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Something went wrong.");
+  }
+});
