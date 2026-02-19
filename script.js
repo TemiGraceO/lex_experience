@@ -52,15 +52,16 @@ const navToggle = document.getElementById("navToggle");
     }
 
     navToggle.addEventListener("click", () => {
-      document.body.classList.toggle("nav-open");
-      if (document.body.classList.contains("nav-open")) {
-        nav.style.transform = "translateY(0)";
-        nav.style.opacity = "1";
-      } else {
-        nav.style.transform = "translateY(-120%)";
-        nav.style.opacity = "0";
-      }
-    });
+  document.body.classList.toggle("nav-open");
+});
+    navLinks.forEach(link => {
+  link.addEventListener("click", () => {
+    if (window.innerWidth <= 720) {
+      document.body.classList.remove("nav-open");
+    }
+  });
+});
+
 
     function updateActiveLink() {
       const scrollY = window.scrollY + 120;
@@ -97,9 +98,6 @@ const navToggle = document.getElementById("navToggle");
 
     document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]").forEach(el => fadeObserver.observe(el));
 
-    registerForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-    });
 
     function showSuccess() {
       registerForm.reset();
@@ -266,24 +264,44 @@ const navToggle = document.getElementById("navToggle");
       innovateSection.style.display = "block";
     }
 
-    payBtn.addEventListener("click", () => {
-      const email = document.getElementById("email").value.trim();
-      const name = document.getElementById("name").value.trim();
+    payBtn.addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const name = document.getElementById("name").value.trim();
 
-      if (!email || !name) {
-        alert("Please fill your name and email first.");
-        return;
-      }
+  if (!email || !name) {
+    alert("Please fill your name and email first.");
+    return;
+  }
 
-      if (schoolSelectEl.value === "yes" && !abuVerified) {
-        alert("Please upload and verify your ABU ID card first.");
-        return;
-      }
+  if (schoolSelectEl.value === "yes" && !abuVerified) {
+    alert("Please upload and verify your ABU ID card first.");
+    return;
+  }
 
-      payWithPaystack(baseAmount, email, () => {
-        showPostPayment();
+  payWithPaystack(baseAmount, email, async (response) => {
+
+    // AFTER successful payment → send to backend
+    const formData = new FormData(registerForm);
+    formData.append("paymentReference", response.reference);
+
+    try {
+      const res = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        body: formData
       });
-    });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showPostPayment();
+      }
+
+    } catch (error) {
+      console.error(error);
+      alert("Registration failed after payment.");
+    }
+  });
+});
 
     innovateYes.addEventListener("click", () => {
       const email = document.getElementById("email").value.trim();

@@ -12,7 +12,6 @@
   <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
   <script src="https://js.paystack.co/v1/inline.js"></script>
   <!-- Removed integrity until you get the correct hash -->
-  <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
   <header class="header" id="top">
@@ -254,7 +253,7 @@
         </ul>
       </div>
 
-      <form class="form fade-slide-right" id="registerForm" action="/register" method="post" novalidate>
+      <form class="form fade-slide-right" id="registerForm" method="post" novalidate>
         <div id="formFields">
           <div class="form-group fade-in" data-delay="0.1s">
             <label for="name">Full Name<span>*</span></label>
@@ -298,26 +297,19 @@
 
           <div class="form-group" id="paymentSection" style="display:none;">
             <p id="paymentText"></p>
-            <button type="submit" class="btn btn-primary btn-block" id="payBtn" disabled>
+            <button type="button" class="btn btn-primary btn-block" id="payBtn" disabled>
               Proceed to Payment
             </button>
+            <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
           </div>
         </div>
 
         <div class="post-payment" id="paymentThanks">
-          Thank you for paying! Your ticket is confirmed. You can choose to add Lex Innovate below.
-        </div>
-
-        <div class="form-group" id="innovateSection" style="display:none;">
-          <p>Would you like to participate in Lex Innovate for ₦12,000?</p>
-          <button type="button" class="btn btn-outline btn-block" id="innovateYes">Yes</button>
-          <button type="button" class="btn btn-outline btn-block" id="innovateNo">No</button>
-        </div>
-
-        <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
-        <p class="form-success" id="formSuccess" hidden>
+          Thank you for registering! Your details would be confirmed. You can also register for <button id="lexBtn" class="btn btn-primary" button type="button" class="btn btn-outline btn-block" id="innovateYes">Lex Innovate</button> -  ₦12,000
+          <p class="form-success" id="formSuccess" hidden>
           Thank you for registering! We've received your details and will contact you shortly.
         </p>
+        </div>
       </form>
     </div>
   </section>
