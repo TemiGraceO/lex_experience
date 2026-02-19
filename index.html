@@ -280,7 +280,7 @@
         </ul>
       </div>
 
-      <form class="form fade-slide-right" id="registerForm" novalidate>
+      <form class="form fade-slide-right" id="registerForm"  action="/register" method="post" novalidate>
         <div class="form-group fade-in" data-delay="0.1s">
           <label for="name">Full Name<span>*</span></label>
           <input type="text" id="name" name="name" placeholder="e.g. Grace Olorunfemi" required />
@@ -330,7 +330,7 @@
         <!-- PAYMENT AREA -->
 <div class="form-group" id="paymentSection">
   <p id="paymentText"></p>
-  <button type="submit" class="btn btn-primary btn-block" id="payBtn">
+  <button type="submit" class="btn btn-primary btn-block" id="payBtn" disabled>
     Proceed to Payment
   </button>
 </div>

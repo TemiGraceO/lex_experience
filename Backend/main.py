@@ -1,6 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from models import registrations, Registration
 from schemas import RegistrationSchema
 from utils import verify_payment
@@ -8,11 +8,13 @@ import shutil, os
 from typing import Optional
 from fastapi import HTTPException
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.templating import Jinja2Templates
 
 
 
 ADMIN_SECRET = "lex2026onlyme"
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
 # CORS (allow frontend connection)
 app.add_middleware(
@@ -26,6 +28,9 @@ app.add_middleware(
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+@app.get("/", response_class=HTMLResponse)
+async def read_form(request:Request):
+    return templates.TemplateResponse("index.html",{"request":request})
 @app.post("/register")
 async def register(
     name: str = Form(...),

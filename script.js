@@ -265,7 +265,7 @@ function verifyIDCard(file) {
   formData.append('name', document.getElementById("name").value.trim());
   formData.append('email', document.getElementById("email").value.trim());
 
-  fetch("https://lex-backend.onrender.com/api/verify-id", {
+  fetch("http://127.0.0.1:5500/register", {
     method: "POST",
     body: formData
   })
