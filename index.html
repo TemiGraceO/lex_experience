@@ -165,7 +165,7 @@
         <article class="timeline-item fade-in" data-delay="0.2s">
           <div class="timeline-dot"></div>
           <div class="timeline-content">
-            <span class="timeline-tag">Day 4 • LEXINOVATE Pitch</span>
+            <span class="timeline-tag" id="innovatey">Day 4 • LEXINOVATE Pitch</span>
             <h3>Innovating Policy for Impact.</h3>
             <p>
               A competitive platform where emerging founders present scalable and legally compliant tech-driven solutions to industry leaders, investors, and policy stakeholders
@@ -235,7 +235,7 @@
     </div>
   </section>
 
-  <section class="section section-cta fade-in" id="register">
+  <section class="section section-cta fade-in">
     <div class="section-cta-overlay"></div>
     <div class="container section-cta-inner">
       <div class="fade-slide-left">
@@ -252,7 +252,7 @@
           <li>Faculty & Mentor Pass</li>
         </ul>
       </div>
-
+<div id="register">
       <form class="form fade-slide-right" id="registerForm" method="post" novalidate>
         <div id="formFields">
           <div class="form-group fade-in" data-delay="0.1s">
@@ -277,7 +277,9 @@
 
           <div class="form-group fade-in" id="regSection" style="display:none;">
             <label for="regNumber">Upload Your ABU ID Card or Admission Letter (JPG/PNG/PDF)<span>*</span></label>
-            <input type="file" id="regNumber" accept=".jpg,.jpeg,.png,.pdf" />
+            <div class="file-upload-container">
+    <input type="file" id="regNumber" name="regNumber" accept=".jpg,.jpeg,.png,.pdf" />
+  </div>
             <div class="id-preview" id="idPreview">
               <img id="idPreviewImage" alt="ID preview" />
               <div class="file-meta">
@@ -297,19 +299,35 @@
 
           <div class="form-group" id="paymentSection" style="display:none;">
             <p id="paymentText"></p>
-            <button type="button" class="btn btn-primary btn-block" id="payBtn" disabled>
-              Proceed to Payment
-            </button>
+            <button 
+  type="button" 
+  class="btn btn-primary btn-block" 
+  id="payBtn" 
+  disabled
+>
+  Proceed to Payment
+</button>
+
+
             <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
           </div>
         </div>
 
-        <div class="post-payment" id="paymentThanks">
-          Thank you for registering! Your details would be confirmed. You can also register for <button id="lexBtn" class="btn btn-primary" button type="button" class="btn btn-outline btn-block" id="innovateYes">Lex Innovate</button> -  ₦12,000
-          <p class="form-success" id="formSuccess" hidden>
-          Thank you for registering! We've received your details and will contact you shortly.
-        </p>
-        </div>
+        <div class="post-payment" id="paymentThanks" style="display: none;">
+    Thank you for registering! Your details would be confirmed. 
+    You can also register for 
+    <button id="lexBtn" class="btn btn-primary"><a href="#innovatey" style="text-decoration: none; color: black;">Lex Innovate Pitch</a></button> - ₦12,000
+  </div>
+
+  <div id="innovateSection" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px;">
+    <h4>Add Lex Innovate?</h4>
+    <p>Upgrade your experience with your innovation track!</p>
+    <div style="display: flex; gap: 1rem;">
+      <button id="innovateYes" class="btn btn-primary">Yes, add it (₦12,000)</button>
+      <button id="innovateNo" class="btn btn-outline">No thanks</button>
+    </div>
+</div>
+
       </form>
     </div>
   </section>

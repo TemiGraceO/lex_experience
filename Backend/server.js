@@ -43,22 +43,27 @@ app.get("/verify-payment/:reference", async (req, res) => {
 
 app.post("/register", upload.single("regNumber"), async (req, res) => {
   try {
-    const { name, email, school, interest } = req.body;
+    const { name, email, school, interest, paymentReference } = req.body;
 
     console.log("New Registration (lex_Experience):");
     console.log(req.body);
-    console.log(req.file);
+    console.log("File:", req.file);
 
-    // Here you’ll:
-    // 1. Save to database
-    // 2. Trigger payment verification
-    // 3. Send confirmation email
+    if (!name || !email || !school) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
 
-    res.json({ success: true, message: "Registration received" });
+    // If ABU student, you might also require a file:
+    if (school === "yes" && !req.file) {
+      return res.status(400).json({ success: false, message: "ID required" });
+    }
 
+    // TODO: verify paymentReference, save to DB, send email, etc.
+
+    return res.status(200).json({ success: true, message: "Registration received" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
