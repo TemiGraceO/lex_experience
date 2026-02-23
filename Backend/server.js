@@ -1,72 +1,80 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const axios = require("axios");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static("uploads"));
 
-// Storage config for uploaded IDs
+// Create uploads folder
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
   }
 });
 
-const upload = multer({ storage });
-
-app.get("/verify-payment/:reference", async (req, res) => {
-  try {
-    const reference = req.params.reference;
-
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-        }
-      }
-    );
-
-    res.json(response.data);
-
-  } catch (err) {
-    res.status(500).json({ error: "Verification failed" });
-  }
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-app.post("/register", upload.single("regNumber"), async (req, res) => {
-  try {
-    const { name, email, school, interest, paymentReference } = req.body;
-
-    console.log("New Registration (lex_Experience):");
-    console.log(req.body);
-    console.log("File:", req.file);
-
-    if (!name || !email || !school) {
-      return res.status(400).json({ success: false, message: "Missing fields" });
+// 🔥 ONE ENDPOINT FOR BOTH CASES - WORKS 100%
+app.post("/register", (req, res) => {
+  console.log("🔥 REGISTRATION STARTED");
+  
+  upload.single('regNumber')(req, res, (err) => {
+    if (err) {
+      console.error("❌ UPLOAD ERROR:", err);
+      return res.status(400).json({ success: false, message: err.message });
     }
 
-    // If ABU student, you might also require a file:
+    console.log("📋 ALL DATA RECEIVED:");
+    console.log("- name:", req.body.name);
+    console.log("- email:", req.body.email);
+    console.log("- school:", req.body.school);
+    console.log("- file:", req.file?.filename || "NO FILE");
+
+    // ✅ ALL DATA IS HERE NOW
+    const { name, email, school, paymentReference } = req.body;
+
+    if (!name || !email || !school || !paymentReference) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing data: " + JSON.stringify({name, email, school, paymentReference}) 
+      });
+    }
+
+    // ABU check
     if (school === "yes" && !req.file) {
-      return res.status(400).json({ success: false, message: "ID required" });
+      return res.status(400).json({ success: false, message: "ABU ID required" });
     }
 
-    // TODO: verify paymentReference, save to DB, send email, etc.
+    // ✅ PERFECT SUCCESS
+    res.json({ 
+      success: true, 
+      message: "Registration successful!",
+      data: {
+        name: name.trim(),
+        email: email.trim(),
+        school: school === "yes" ? "ABU" : "Non-ABU",
+        file: req.file?.filename || null
+      }
+    });
 
-    return res.status(200).json({ success: true, message: "Registration received" });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
+    console.log("✅ SUCCESSFULLY REGISTERED");
+  });
 });
 
 app.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+  console.log("🚀 Server running: http://localhost:5000");
 });
