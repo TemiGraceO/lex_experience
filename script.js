@@ -30,7 +30,10 @@ let verifyTimeout;
 const MOCK_VERIFICATION_MODE = true;
 
 // 🔥 FORM PROTECTION - NO DUPLICATES
-registerForm.onsubmit = function() { return false; };
+registerForm.addEventListener("submit", function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+});
 
 function checkFormValidity() {
   const name = document.getElementById("name").value.trim();
@@ -54,15 +57,6 @@ function showPostPayment() {
   formFields.style.display = "none";
   paymentThanks.style.display = "block";
   innovateSection.style.display = "block";
-  
-  // Reset form state
-  setTimeout(() => {
-    registerForm.reset();
-    uploadedFile = null;
-    abuVerified = false;
-    regSection.style.display = "none";
-    paymentSection.style.display = "none";
-  }, 100);
 }
 
 function showVerificationSuccess(message) {
@@ -86,7 +80,7 @@ function verifyIDCard(file) {
   if (MOCK_VERIFICATION_MODE) {
     setTimeout(() => {
       abuVerified = true;
-      showVerificationSuccess("✅ ABU ID verified successfully! You can now proceed.");
+      showVerificationSuccess("ABU ID uploaded successfully! You can now proceed.");
       checkFormValidity();
     }, 1200);
     return;
@@ -97,11 +91,11 @@ function verifyIDCard(file) {
 // 🔥 PERFECTLY FIXED PAYMENT HANDLER - WORKS FOR BOTH ABU & NON-ABU
 // 🔥 BULLETPROOF PAYMENT HANDLER
 async function handlePayment() {
-  console.log("🚀 Payment starting...");
+  console.log("Payment starting...");
   
   const payBtn = document.getElementById("payBtn");
   payBtn.disabled = true;
-  payBtn.innerHTML = "⏳ Processing...";
+  payBtn.innerHTML = "Processing...";
 
   try {
     // Get form values
@@ -131,7 +125,7 @@ async function handlePayment() {
       handler.openIframe();
     });
 
-    console.log("✅ Payment success:", paymentResult.reference);
+    console.log("Payment success:", paymentResult.reference);
 
     // Create FormData
     const formData = new FormData();
@@ -146,7 +140,7 @@ async function handlePayment() {
       formData.append('regNumber', uploadedFile);
     }
 
-    payBtn.innerHTML = "📤 Registering...";
+    payBtn.innerHTML = "Registering...";
 
     // Backend submission
     const response = await fetch("http://localhost:5000/register", {
@@ -156,7 +150,7 @@ async function handlePayment() {
 
     // 🔥 SAFER RESPONSE HANDLING
     const text = await response.text();
-    console.log("📥 Backend response:", text);
+    console.log("Backend response:", text);
     
     let result;
     try {
@@ -170,7 +164,7 @@ async function handlePayment() {
       throw new Error(result.message || "Registration failed");
     }
 
-    console.log("🎉 Registration complete!");
+    console.log("Registration complete!");
     showPostPayment();
 
   } catch (error) {
@@ -185,6 +179,8 @@ async function handlePayment() {
 
 // 🔥 PERFECT FILE UPLOAD HANDLER
 regNumberInput.addEventListener("change", function(e) {
+  e.preventDefault(); // ✅ add this
+  e.stopPropagation(); // ✅ and this
   const file = e.target.files[0];
 
   // Clear previous file
