@@ -1,74 +1,81 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const app = express();
+const cloudinary = require("cloudinary").v2;
+const dotenv = require("dotenv");
 
+dotenv.config();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Create uploads folder
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
+// ✅ Store in memory, never touches disk
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpe?g|png|pdf/i.test(file.mimetype);
-    cb(allowed ? null : new Error("Invalid file type"), allowed);
+
+const registrations = {};
+
+app.post("/register", upload.single("regNumber"), async (req, res) => {
+  try {
+    const { name, email, school, paymentReference, interest } = req.body;
+
+    if (!name || !email || !school || !paymentReference)
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+
+    if (school === "yes" && !req.file)
+      return res.status(400).json({ success: false, message: "ABU ID required" });
+
+    let fileUrl = null;
+
+    // ✅ Upload to Cloudinary from memory buffer
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "lexperience-ids", resource_type: "auto" },
+          (error, result) => error ? reject(error) : resolve(result)
+        );
+        stream.end(req.file.buffer);
+      });
+      fileUrl = result.secure_url;
+    }
+
+    if (!registrations[email]) registrations[email] = {};
+    registrations[email].main = true;
+    registrations[email].name = name.trim();
+    registrations[email].fileUrl = fileUrl;
+
+    res.json({ success: true, message: "Registration successful!" });
+    console.log("✅ Registered:", email);
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// 🔥 ONE ENDPOINT FOR BOTH CASES - WORKS 100%
-app.post("/register", (req, res) => {
-  console.log("🔥 REGISTRATION STARTED");
-  upload.single('regNumber')(req, res, (err) => {
-    if (err) {
-      console.error("❌ UPLOAD ERROR:", err);
-      return res.status(400).json({ success: false, message: err.message });
-    }
-    console.log("📋 ALL DATA RECEIVED:");
-    console.log("- name:", req.body.name);
-    console.log("- email:", req.body.email);
-    console.log("- school:", req.body.school);
-    console.log("- paymentReference:", req.body.paymentReference);
+app.post("/register-innovate", async (req, res) => {
+  const { email, paymentReference } = req.body;
+  if (!email || !registrations[email]?.main)
+    return res.status(400).json({ success: false, message: "Complete main registration first" });
 
-    const { name, email, school, paymentReference } = req.body;
-    if (!name || !email || !school || !paymentReference) {
-      return res.status(400).json({ success: false, message: "Missing data" });
-    }
-    // ABU check
-    if (school === "yes" && !req.file) {
-      return res.status(400).json({ success: false, message: "ABU ID required" });
-    }
-    // ✅ PERFECT SUCCESS
-    res.json({
-      success: true,
-      message: "Registration successful!",
-      data: {
-        name: name.trim(),
-        email: email.trim(),
-        school: school === "yes" ? "ABU" : "Non-ABU",
-        paymentReference: paymentReference.trim(),
-        file: req.file ? req.file.filename : null
-      }
-    });
-    console.log("✅ SUCCESSFULLY REGISTERED");
-  });
+  registrations[email].innovate = true;
+  res.json({ success: true, message: "Lex Innovate added!" });
 });
 
-app.use("/uploads", express.static(uploadsDir));
-
-app.listen(5000, () => {
-  console.log("Server running: http://localhost:5000");
+app.get("/registration-status", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ success: false });
+  res.json({ success: true, state: registrations[email] || {} });
 });
+
+app.listen(5000, () => console.log("Server running on port 5000"));
