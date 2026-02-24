@@ -140,7 +140,7 @@ async function handlePayment() {
       formData.append('regNumber', uploadedFile);
     }
 
-    payBtn.innerHTML = "Registering...";
+    payBtn.innerHTML = "Processing registration...";
 
     // Backend submission
     const response = await fetch("http://localhost:5000/register", {
