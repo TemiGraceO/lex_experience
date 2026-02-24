@@ -79,7 +79,10 @@ app.post("/register", (req, res) => {
     console.log("✅ SUCCESSFULLY REGISTERED");
   });
 });
-app.get("/", (req, res) => res.send("Backend alive!"));
+app.get("/registrations", async (req, res) => {
+  const regs = await Registration.find();
+  res.json(regs);
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
