@@ -14,20 +14,8 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static("uploads"));
 
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
-});
-
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 // Ensure uploads dir exists (in tmp for Render)
 const uploadsDir = "public/uploads";
 if (!fs.existsSync(uploadsDir)) {
