@@ -7,6 +7,18 @@ window.addEventListener('error', (e) => {
   }
 }, true);
 
+const app = express();
+
+// ✅ ADD THESE 4 LINES (before other middleware)
+app.use(express.static(path.join(__dirname, '.')));  // Serve HTML/CSS/JS
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
 window.addEventListener('unhandledrejection', (e) => {
   if (e.reason && e.reason.message && e.reason.message.includes('language')) {
     e.preventDefault();
