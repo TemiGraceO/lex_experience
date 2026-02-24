@@ -296,7 +296,7 @@ if (innovateYes) {
 
   payWithPaystack(12000, email, async (response) => {
     try {
-      res = await fetch("https://lex-xperience-backend.onrender.com/innovate-pay", {
+      const res = await fetch("https://lex-xperience-backend.onrender.com/innovate-pay", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
