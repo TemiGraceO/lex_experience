@@ -33,6 +33,20 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB error:", err));
 
+  const registrationSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  school: String,
+  paymentReference: String,
+  file: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const Registration = mongoose.model("Registration", registrationSchema);
+
 // 🔥 ONE ENDPOINT FOR BOTH CASES - WORKS 100%
 app.post("/register", (req, res) => {
   console.log("🔥 REGISTRATION STARTED");
@@ -64,17 +78,27 @@ app.post("/register", (req, res) => {
     }
 
     // ✅ PERFECT SUCCESS
-    res.json({ 
-      success: true, 
-      message: "Registration successful!",
-      data: {
-        name: name.trim(),
-        email: email.trim(),
-        school: school === "yes" ? "ABU" : "Non-ABU",
-        paymentReference: paymentReference.trim(),
-        file: req.file ? req.file.filename : null
-      }
+    const newRegistration = new Registration({
+  name: name.trim(),
+  email: email.trim(),
+  school: school === "yes" ? "ABU" : "Non-ABU",
+  paymentReference: paymentReference.trim(),
+  file: req.file ? req.file.filename : null
+});
+
+newRegistration.save()
+  .then(() => {
+    console.log("✅ SAVED TO DATABASE");
+
+    res.json({
+      success: true,
+      message: "Registration successful!"
     });
+  })
+  .catch(err => {
+    console.error("❌ DATABASE SAVE ERROR:", err);
+    res.status(500).json({ success: false, message: "Database error" });
+  });
 
     console.log("✅ SUCCESSFULLY REGISTERED");
   });
