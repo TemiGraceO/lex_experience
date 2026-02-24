@@ -103,6 +103,27 @@ newRegistration.save()
     console.log("✅ SUCCESSFULLY REGISTERED");
   });
 });
+
+app.post("/add-innovate", async (req, res) => {
+  const { email, innovateReference } = req.body;
+
+  try {
+    const updated = await Registration.findOneAndUpdate(
+      { email },
+      { innovatePayment: innovateReference },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/", (req, res) => res.send("Backend alive!"));
 
 const PORT = process.env.PORT || 5000;

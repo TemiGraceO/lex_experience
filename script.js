@@ -281,23 +281,45 @@ payBtn.addEventListener("click", function(e) {
 
 // 🔥 LEX INNOVATE HANDLERS
 if (innovateYes) {
-  innovateYes.addEventListener("click", function() {
-    const email = document.getElementById("email").value.trim();
-    e.preventDefault();
-    e.stopPropagation();
-    handlePayment();
-    if (!email) {
-      alert("Please enter your email first");
-      return;
-    }
-    
-    if (confirm("Add Lex Innovate Pitch for ₦12,000?")) {
-      payWithPaystack(12000, email, () => {
-        alert("🎉 Lex Innovate registration successful!");
-        innovateSection.style.display = "none";
+  innovateYes.addEventListener("click", function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const email = document.getElementById("email").value.trim();
+
+  if (!email) {
+    alert("Please enter your email first");
+    return;
+  }
+
+  if (!confirm("Add Lex Innovate Pitch for ₦12,000?")) return;
+
+  payWithPaystack(12000, email, async (response) => {
+    try {
+      const res = await fetch("https://lex-xperience-backend.onrender.com/add-innovate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          innovateReference: response.reference
+        })
       });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      alert("🎉 Lex Innovate registration successful!");
+      innovateSection.style.display = "none";
+
+    } catch (err) {
+      alert("Failed to save Innovate payment");
+      console.error(err);
     }
   });
+});
 }
 
 if (innovateNo) {
