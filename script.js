@@ -283,6 +283,9 @@ payBtn.addEventListener("click", function(e) {
 if (innovateYes) {
   innovateYes.addEventListener("click", function() {
     const email = document.getElementById("email").value.trim();
+    e.preventDefault();
+    e.stopPropagation();
+    handlePayment();
     if (!email) {
       alert("Please enter your email first");
       return;
