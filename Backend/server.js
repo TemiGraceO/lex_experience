@@ -1,57 +1,91 @@
+// server.js
+
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 const mongoose = require("mongoose");
-const cloudinary = require('cloudinary').v2;
-const streamifier = require('streamifier');
 
 const app = express();
+
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// ✅ CLOUDINARY CONFIG
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+// Ensure uploads dir exists (in tmp for Render)
+app.use(express.static(path.join(__dirname, 'public')));
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+// Multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
-// ✅ MEMORY STORAGE
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// MongoDB
-mongoose.connect(process.env.MONGODB_URI);
+// Mongo connection
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB error:", err));
 
-// Schemas
-const Registration = mongoose.model("Registration", new mongoose.Schema({
-  name: String,
+// Schemas/models
+
+const registrationSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   school: String,
-  registrationPayment: { reference: String, amount: Number },
+  registrationPayment: {
+    reference: String,
+    amount: Number,
+  },
   interest: String,
+  file: String,
   fileUrl: String,
-  fileName: String,
-  createdAt: { type: Date, default: Date.now }
-}));
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-const InnovateRegistration = mongoose.model("InnovateRegistration", new mongoose.Schema({
-  email: String,
-  reference: String,
-  amount: Number,
-  createdAt: { type: Date, default: Date.now }
-}));
+const innovateSchema = new mongoose.Schema({
+  email: { type: String, required: true },
+  reference: { type: String, required: true },
+  amount: { type: Number, required: true },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-// ✅ FIXED REGISTER ROUTE
+const Registration = mongoose.model("Registration", registrationSchema);
+const InnovateRegistration = mongoose.model("InnovateRegistration", innovateSchema);
+
+// ---------- Routes ----------
+
+// Main Lex registration (with optional file)
 app.post("/register", upload.single("regNumber"), async (req, res) => {
   try {
     const { name, email, school, paymentReference, amount, interest } = req.body;
 
     if (!name || !email || !school || !paymentReference) {
-      return res.status(400).json({ success: false, message: "Missing data" });
+      return res.status(400).json({
+        success: false,
+        message: "Missing registration data",
+      });
     }
 
     const registrationData = {
@@ -59,76 +93,87 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       email: email.trim(),
       school,
       interest: interest || "",
-      registrationPayment: { reference: paymentReference, amount: Number(amount || 0) }
+      registrationPayment: {
+        reference: paymentReference,
+        amount: Number(amount || 0),
+      },
     };
 
     if (req.file) {
-      registrationData.fileName = req.file.originalname;
-      
-      // ✅ UPLOAD TO CLOUDINARY PROPERLY
-      const uploadPromise = new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          { resource_type: "auto", folder: "lex-experience" },
-          (error, result) => {
-            if (error) {
-              console.error("Cloudinary error:", error);
-              reject(error);
-            } else {
-              registrationData.fileUrl = result.secure_url;
-              resolve(result);
-            }
-          }
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-      });
-
-      await uploadPromise;
+      // ✅ STORE FULL DOWNLOAD URL
+      const fileUrl = `https://lex-experience.vercel.app/uploads/${req.file.filename}`;
+      registrationData.file = req.file.filename;
+      registrationData.fileUrl = fileUrl;  // ← NEW: Complete URL
     }
 
     const saved = await Registration.findOneAndUpdate(
       { email: registrationData.email },
       registrationData,
-      { upsert: true, new: true }
+      { upsert: true, new: true } // new = returnDocument:"after"
     );
 
-    res.json({ success: true, data: saved });
+    return res.json({
+      success: true,
+      data: saved,
+    });
   } catch (err) {
     console.error("Register error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post("/innovate-pay", async (req, res) => {
-  try {
-    const { email, reference, amount } = req.body;
-    const doc = await InnovateRegistration.create({ 
-      email: email.trim(), 
-      reference, 
-      amount: Number(amount) 
+    return res.status(500).json({
+      success: false,
+      message: "Registration failed",
     });
-    res.json({ success: true, data: doc });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
   }
 });
-
+// ✅ GET FILE URL BY EMAIL
 app.get("/get-file/:email", async (req, res) => {
   try {
     const doc = await Registration.findOne({ email: req.params.email });
-    res.json({ 
-      success: !!doc?.fileUrl, 
-      fileUrl: doc?.fileUrl,
-      fileName: doc?.fileName 
-    });
+    if (doc?.fileUrl) {
+      res.json({ success: true, fileUrl: doc.fileUrl });
+    } else {
+      res.json({ success: false, message: "No file found" });
+    }
   } catch (err) {
     res.status(500).json({ success: false, message: "Error" });
   }
 });
 
+// Lex Innovate payment (separate collection)
+app.post("/innovate-pay", async (req, res) => {
+  try {
+    const { email, reference, amount } = req.body;
+
+    if (!email || !reference) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing Innovate payment data",
+      });
+    }
+
+    const doc = await InnovateRegistration.create({
+      email: email.trim(),
+      reference,
+      amount: Number(amount || 0),
+    });
+
+    return res.json({
+      success: true,
+      data: doc,
+    });
+  } catch (err) {
+    console.error("Innovate error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Innovate payment failed",
+    });
+  }
+});
+
+// Health check
 app.get("/", (req, res) => res.send("Backend alive!"));
 
-// ✅ FIXED: Vercel serverless format
-module.exports = app;
-
+// Start
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
