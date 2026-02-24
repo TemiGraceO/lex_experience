@@ -5,6 +5,8 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("uploads"));
 
@@ -104,10 +106,10 @@ newRegistration.save()
   });
 });
 
-app.post("/add-innovate", async (req, res) => {
-  const { email, innovateReference } = req.body;
-
+app.post("/add-innovate", express.json(), async (req, res) => {
   try {
+    const { email, innovateReference } = req.body;
+
     const updated = await Registration.findOneAndUpdate(
       { email },
       { innovatePayment: innovateReference },
@@ -115,12 +117,20 @@ app.post("/add-innovate", async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
 
     res.json({ success: true });
+
   } catch (err) {
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 });
 
