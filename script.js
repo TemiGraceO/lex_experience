@@ -83,9 +83,7 @@ function verifyIDCard(file) {
       showVerificationSuccess("ABU ID uploaded successfully! You can now proceed.");
       checkFormValidity();
     }, 1200);
-    return;
   }
-  // Real verification would go here
 }
 
 // 🔥 PERFECTLY FIXED PAYMENT HANDLER - WORKS FOR BOTH ABU & NON-ABU
