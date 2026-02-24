@@ -335,15 +335,23 @@ function payWithPaystack(amount, email, callback) {
     email: email,
     amount: amount * 100,
     currency: "NGN",
-    theme: { color: "#f7de50" },
+
     callback: function(response) {
-    resolve(response);
+      if (callback) {
+        callback(response);
+      } else {
+        console.log("Payment reference:", response.reference);
+        alert("Payment successful!");
+      }
     },
-    onClose: () => alert("Payment cancelled")
+
+    onClose: function() {
+      alert("Payment cancelled");
+    }
   });
+
   handler.openIframe();
 }
-
 // 🔥 NAVIGATION
 navToggle.addEventListener("click", () => {
   document.body.classList.toggle("nav-open");
