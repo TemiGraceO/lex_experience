@@ -1,4 +1,5 @@
-// 🔥 PERFECT LEX XPERIENCE SCRIPT.JS - COMPLETE & BULLETPROOF
+// 🔥 LEX XPERIENCE SCRIPT.JS (LOGIC ONLY - DESIGN UNTOUCHED)
+
 const navToggle = document.getElementById("navToggle");
 const paymentThanks = document.getElementById("paymentThanks");
 const innovateSection = document.getElementById("innovateSection");
@@ -24,16 +25,17 @@ const formFields = document.getElementById("formFields");
 
 let baseAmount = 0;
 let abuVerified = false;
-let rafId;
 let uploadedFile = null;
 let verifyTimeout;
 const MOCK_VERIFICATION_MODE = true;
 
-// 🔥 FORM PROTECTION - NO DUPLICATES
-registerForm.addEventListener("submit", function(e) {
+// Prevent native submit (we control flow)
+registerForm.addEventListener("submit", (e) => {
   e.preventDefault();
   e.stopPropagation();
 });
+
+// ---------- Form helpers ----------
 
 function checkFormValidity() {
   const name = document.getElementById("name").value.trim();
@@ -41,7 +43,7 @@ function checkFormValidity() {
   const school = schoolSelectEl.value;
   const hasFile = uploadedFile !== null;
 
-  let isValid = name && email && school;
+  let isValid = !!(name && email && school);
 
   if (school === "yes") {
     isValid = isValid && hasFile && abuVerified;
@@ -53,7 +55,6 @@ function checkFormValidity() {
 }
 
 function showPostPayment() {
-  console.log("🎉 Registration complete - showing success");
   formFields.style.display = "none";
   paymentThanks.style.display = "block";
   innovateSection.style.display = "block";
@@ -86,17 +87,16 @@ function verifyIDCard(file) {
   }
 }
 
-// 🔥 PERFECTLY FIXED PAYMENT HANDLER - WORKS FOR BOTH ABU & NON-ABU
-// 🔥 BULLETPROOF PAYMENT HANDLER
+// ---------- Main Lex payment ----------
+
 async function handlePayment() {
   console.log("Payment starting...");
-  
-  const payBtn = document.getElementById("payBtn");
-  payBtn.disabled = true;
-  payBtn.innerHTML = "Processing...";
+
+  const btn = payBtn;
+  btn.disabled = true;
+  btn.innerHTML = "Processing...";
 
   try {
-    // Get form values
     const name = document.getElementById("name").value.trim();
     const email = document.getElementById("email").value.trim();
     const school = schoolSelectEl.value;
@@ -110,53 +110,48 @@ async function handlePayment() {
       throw new Error("Please verify your ABU ID first");
     }
 
-    // Paystack payment
+    // Paystack popup for main ticket
     const paymentResult = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
         key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
         email,
         amount: baseAmount * 100,
         currency: "NGN",
-        callback: function(response) {
-        resolve(response);
-    },
-        onClose: () => reject(new Error("Payment cancelled"))
+        callback: (response) => resolve(response),
+        onClose: () => reject(new Error("Payment cancelled")),
       });
       handler.openIframe();
     });
 
-    console.log("Payment success:", paymentResult.reference);
+    console.log("Main payment success:", paymentResult.reference);
 
-    // Create FormData
     const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('school', school);
-    formData.append('interest', interest);
-    formData.append('paymentReference', paymentResult.reference);
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("school", school);
+    formData.append("interest", interest);
+    formData.append("paymentReference", paymentResult.reference);
+    formData.append("amount", String(baseAmount));
 
-    // File handling
     if (school === "yes" && uploadedFile) {
-      formData.append('regNumber', uploadedFile);
+      formData.append("regNumber", uploadedFile);
     }
 
-    payBtn.innerHTML = "Processing registration...";
+    btn.innerHTML = "Processing registration...";
 
-    // Backend submission
-    response = await fetch("https://lex-xperience-backend.onrender.com/register", {
-  method: "POST",
-  body: formData
-});
+    const response = await fetch("https://lex-xperience-backend.onrender.com/register", {
+      method: "POST",
+      body: formData,
+    });
 
-    // 🔥 SAFER RESPONSE HANDLING
     const text = await response.text();
-    console.log("Backend response:", text);
-    
+    console.log("Register backend response:", text);
+
     let result;
     try {
       result = JSON.parse(text);
     } catch (e) {
-      console.error("❌ Invalid JSON:", text);
+      console.error("Invalid JSON from /register:", text);
       throw new Error("Server returned invalid response");
     }
 
@@ -166,24 +161,23 @@ async function handlePayment() {
 
     console.log("Registration complete!");
     showPostPayment();
-
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error("Main payment error:", error);
     alert("Registration failed: " + error.message);
   } finally {
-    payBtn.disabled = false;
-    payBtn.innerHTML = "Proceed to Payment";
+    btn.disabled = false;
+    btn.innerHTML = "Proceed to Payment";
   }
 }
 
+// ---------- File upload (ABU ID) ----------
 
-// 🔥 PERFECT FILE UPLOAD HANDLER
-regNumberInput.addEventListener("change", function(e) {
-  e.preventDefault(); // ✅ add this
-  e.stopPropagation(); // ✅ and this
+regNumberInput.addEventListener("change", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
   const file = e.target.files[0];
 
-  // Clear previous file
   uploadedFile = null;
   abuVerified = false;
   resetPreview();
@@ -194,50 +188,52 @@ regNumberInput.addEventListener("change", function(e) {
     return;
   }
 
-  // Validate file size (5MB)
   if (file.size > 5 * 1024 * 1024) {
     idError.textContent = "File too large. Maximum size is 5MB.";
-    e.target.value = ""; // Clear input
+    e.target.value = "";
     checkFormValidity();
     return;
   }
 
-  // Validate file type
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+  const validTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+  ];
   if (!validTypes.includes(file.type)) {
     idError.textContent = "Invalid file type. Please upload JPG, PNG, or PDF only.";
-    e.target.value = ""; // Clear input
+    e.target.value = "";
     checkFormValidity();
     return;
   }
 
-  // ✅ ALL VALID - SET UP PREVIEW & VERIFY
   uploadedFile = file;
   idError.textContent = "";
   verifyStatus.textContent = "🔍 Verifying ABU ID...";
   verifyStatus.style.color = "#f7de50";
 
-  // Show preview
   idPreview.style.display = "flex";
   idFileName.textContent = file.name;
-  idFileType.textContent = file.type.includes("pdf") ? "PDF document" : `${file.type.toUpperCase()} image`;
+  idFileType.textContent = file.type.includes("pdf")
+    ? "PDF document"
+    : `${file.type.toUpperCase()} image`;
 
-  // Set preview image
   if (file.type.includes("pdf")) {
     idPreviewImage.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
   } else {
     idPreviewImage.src = URL.createObjectURL(file);
   }
 
-  // Verify ID
   verifyIDCard(file);
 });
 
-// 🔥 SCHOOL SELECTION HANDLER
-schoolSelectEl.addEventListener("change", function() {
+// ---------- School selection ----------
+
+schoolSelectEl.addEventListener("change", function () {
   const value = this.value;
 
-  // Reset everything
   paymentSection.style.display = "none";
   regSection.style.display = "none";
   resetPreview();
@@ -249,95 +245,42 @@ schoolSelectEl.addEventListener("change", function() {
     return;
   }
 
-  // Set pricing & show sections
   if (value === "yes") {
-    // ABU Student
     baseAmount = 5000;
     paymentText.textContent = "ABU Student Ticket: ₦5,000";
     regSection.style.display = "block";
     verifyStatus.textContent = "Upload clear, legible ABU ID or admission letter";
     verifyStatus.style.color = "#f7de50";
   } else {
-    // Non-ABU Student
     baseAmount = 12000;
     paymentText.textContent = "Non-ABU Student Ticket: ₦12,000";
-    abuVerified = true; // Auto-verified for non-ABU
+    abuVerified = true; // no ID required
   }
 
   paymentSection.style.display = "block";
   checkFormValidity();
 });
 
-// 🔥 FORM INPUT WATCHERS
+// ---------- Input watchers ----------
+
 document.getElementById("name").addEventListener("input", checkFormValidity);
 document.getElementById("email").addEventListener("input", checkFormValidity);
 
-// 🔥 PAY BUTTON - FIXED
-payBtn.addEventListener("click", function(e) {
+payBtn.addEventListener("click", (e) => {
   e.preventDefault();
   e.stopPropagation();
   handlePayment();
 });
 
-// 🔥 LEX INNOVATE HANDLERS
-if (innovateYes) {
-  innovateYes.addEventListener("click", function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const email = document.getElementById("email").value.trim();
-
-  if (!email) {
-    alert("Please enter your email first");
-    return;
-  }
-
-  if (!confirm("Add Lex Innovate Pitch for ₦12,000?")) return;
-
-  payWithPaystack(12000, email, async (response) => {
-    try {
-      const res = await fetch("https://lex-xperience-backend.onrender.com/innovate-pay", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email,
-    reference: response.reference,
-    amount: 12000
-  })
-});
-
-      const result = await res.json();
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      alert("🎉 Lex Innovate registration successful!");
-      innovateSection.style.display = "none";
-
-    } catch (err) {
-      alert("Failed to save Innovate payment");
-      console.error(err);
-    }
-  });
-});
-}
-
-if (innovateNo) {
-  innovateNo.addEventListener("click", function() {
-    alert("🎉 Registration complete! Enjoy Lex Xperience 2026!");
-    innovateSection.style.display = "none";
-  });
-}
+// ---------- Lex Innovate handlers (SECOND PAYMENT) ----------
 
 function payWithPaystack(amount, email, callback) {
   const handler = PaystackPop.setup({
     key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
-    email: email,
+    email,
     amount: amount * 100,
     currency: "NGN",
-
-    callback: function(response) {
+    callback: (response) => {
       if (callback) {
         callback(response);
       } else {
@@ -345,20 +288,77 @@ function payWithPaystack(amount, email, callback) {
         alert("Payment successful!");
       }
     },
-
-    onClose: function() {
+    onClose: () => {
       alert("Payment cancelled");
-    }
+    },
   });
 
   handler.openIframe();
 }
-// 🔥 NAVIGATION
+
+if (innovateYes) {
+  innovateYes.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+      alert("Please enter your email first");
+      return;
+    }
+
+    if (!confirm("Add Lex Innovate Pitch for ₦12,000?")) return;
+
+    payWithPaystack(12000, email, async (paystackResponse) => {
+      try {
+        console.log("Innovate Paystack success:", paystackResponse);
+
+        const res = await fetch(
+          "https://lex-xperience-backend.onrender.com/innovate-pay",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              reference: paystackResponse.reference,
+              amount: 12000,
+            }),
+          }
+        );
+
+        console.log("Innovate fetch status:", res.status);
+        const result = await res.json();
+        console.log("Innovate backend JSON:", result);
+
+        if (!result.success) {
+          throw new Error(result.message || "Innovate payment failed");
+        }
+
+        alert("🎉 Lex Innovate registration successful!");
+        innovateSection.style.display = "none";
+      } catch (err) {
+        console.error("Innovate error:", err);
+        alert("Failed to save Innovate payment: " + err.message);
+      }
+    });
+  });
+}
+
+if (innovateNo) {
+  innovateNo.addEventListener("click", () => {
+    alert("🎉 Registration complete! Enjoy Lex Xperience 2026!");
+    innovateSection.style.display = "none";
+  });
+}
+
+// ---------- Navigation & animations (unchanged design) ----------
+
 navToggle.addEventListener("click", () => {
   document.body.classList.toggle("nav-open");
 });
 
-navLinks.forEach(link => {
+navLinks.forEach((link) => {
   link.addEventListener("click", () => {
     if (window.innerWidth <= 720) {
       document.body.classList.remove("nav-open");
@@ -366,15 +366,14 @@ navLinks.forEach(link => {
   });
 });
 
-// 🔥 SMOOTH SCROLL & ACTIVE NAV
 function updateActiveLink() {
   const scrollY = window.scrollY + 120;
-  sections.forEach(section => {
+  sections.forEach((section) => {
     const top = section.offsetTop;
     const height = section.offsetHeight;
     const id = section.getAttribute("id");
     if (scrollY >= top && scrollY < top + height) {
-      navLinks.forEach(l => l.classList.remove("active"));
+      navLinks.forEach((l) => l.classList.remove("active"));
       const current = document.querySelector(`.nav-link[href="#${id}"]`);
       if (current) current.classList.add("active");
     }
@@ -382,20 +381,23 @@ function updateActiveLink() {
 }
 
 let ticking = false;
-window.addEventListener("scroll", () => {
-  if (!ticking) {
-    requestAnimationFrame(() => {
-      updateActiveLink();
-      ticking = false;
-    });
-    ticking = true;
-  }
-}, { passive: true });
+window.addEventListener(
+  "scroll",
+  () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateActiveLink();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  },
+  { passive: true }
+);
 
-// 🔥 INTERSECTION OBSERVER FOR ANIMATIONS
 const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
 const fadeObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
+  entries.forEach((entry) => {
     const el = entry.target;
     if (entry.isIntersecting) {
       el.classList.add("visible");
@@ -405,11 +407,12 @@ const fadeObserver = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]").forEach(el => {
-  fadeObserver.observe(el);
-});
+document
+  .querySelectorAll(
+    ".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]"
+  )
+  .forEach((el) => fadeObserver.observe(el));
 
-// 🔥 INITIALIZE
 updateActiveLink();
 checkFormValidity();
-console.log("Lex Xperience script loaded perfectly!");
+console.log("Lex Xperience script loaded.");
