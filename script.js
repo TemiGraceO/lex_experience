@@ -1,30 +1,4 @@
 // 🔥 LEX XPERIENCE SCRIPT.JS (LOGIC ONLY - DESIGN UNTOUCHED)
-// Add this at the VERY TOP of script.js (first lines after variable declarations)
-window.addEventListener('error', (e) => {
-  if (e.filename && e.filename.includes('index-DL8lJNkN.js')) {
-    e.preventDefault();
-    console.warn('Ignoring platform bundle error:', e.message);
-  }
-}, true);
-
-const app = express();
-
-// ✅ ADD THESE 4 LINES (before other middleware)
-app.use(express.static(path.join(__dirname, '.')));  // Serve HTML/CSS/JS
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-
-window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason && e.reason.message && e.reason.message.includes('language')) {
-    e.preventDefault();
-    console.warn('Ignoring platform promise rejection');
-  }
-}, true);
 
 const navToggle = document.getElementById("navToggle");
 const paymentThanks = document.getElementById("paymentThanks");
