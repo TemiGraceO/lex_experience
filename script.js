@@ -336,7 +336,9 @@ function payWithPaystack(amount, email, callback) {
     amount: amount * 100,
     currency: "NGN",
     theme: { color: "#f7de50" },
-    callback: callback,
+    callback: function(response) {
+    resolve(response);
+    },
     onClose: () => alert("Payment cancelled")
   });
   handler.openIframe();
