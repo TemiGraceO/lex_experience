@@ -14,12 +14,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(express.static("uploads"));
 
 // Ensure uploads dir exists (in tmp for Render)
 app.use(express.static(path.join(__dirname, 'public')));
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
-
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 // Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
