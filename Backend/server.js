@@ -36,11 +36,23 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error("MongoDB error:", err));
 
   const registrationSchema = new mongoose.Schema({
-  name: String,
-  email: String,
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+
   school: String,
-  paymentReference: String,
+
+  registrationPayment: {
+    reference: String,
+    amount: Number
+  },
+
+  innovatePayment: {
+    reference: String,
+    amount: Number
+  },
+
   file: String,
+
   createdAt: {
     type: Date,
     default: Date.now
@@ -50,86 +62,73 @@ mongoose.connect(process.env.MONGODB_URI)
 const Registration = mongoose.model("Registration", registrationSchema);
 
 // 🔥 ONE ENDPOINT FOR BOTH CASES - WORKS 100%
-app.post("/register", (req, res) => {
-  console.log("🔥 REGISTRATION STARTED");
-  upload.single('regNumber')(req, res, (err) => {
-    if (err) {
-      console.error("❌ UPLOAD ERROR:", err);
-      return res.status(400).json({ success: false, message: err.message });
-    }
-
-    console.log("📋 ALL DATA RECEIVED:");
-    console.log("- name:", req.body.name);
-    console.log("- email:", req.body.email);
-    console.log("- school:", req.body.school);
-    console.log("- paymentReference:", req.body.paymentReference);
-
-    // ✅ ALL DATA IS HERE NOW
-    const { name, email, school, paymentReference } = req.body;
+app.post("/register", upload.single("regNumber"), async (req, res) => {
+  try {
+    const { name, email, school, paymentReference, amount } = req.body;
 
     if (!name || !email || !school || !paymentReference) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Missing data: " + JSON.stringify({name, email, school, paymentReference}) 
+      return res.status(400).json({
+        success: false,
+        message: "Missing registration data"
       });
     }
 
-    // ABU check
-    if (school === "yes" && !req.file) {
-      return res.status(400).json({ success: false, message: "ABU ID required" });
+    const registrationData = {
+      name: name.trim(),
+      email: email.trim(),
+      school,
+      registrationPayment: {
+        reference: paymentReference,
+        amount: Number(amount || 0)
+      }
+    };
+
+    if (req.file) {
+      registrationData.file = req.file.filename;
     }
 
-    // ✅ PERFECT SUCCESS
-    const newRegistration = new Registration({
-  name: name.trim(),
-  email: email.trim(),
-  school: school === "yes" ? "ABU" : "Non-ABU",
-  paymentReference: paymentReference.trim(),
-  file: req.file ? req.file.filename : null
-});
-
-newRegistration.save()
-  .then(() => {
-    console.log("✅ SAVED TO DATABASE");
+    const saved = await Registration.findOneAndUpdate(
+      { email },
+      registrationData,
+      { upsert: true, returnDocument: "after" }
+    );
 
     res.json({
       success: true,
-      message: "Registration successful!"
+      data: saved
     });
-  })
-  .catch(err => {
-    console.error("❌ DATABASE SAVE ERROR:", err);
-    res.status(500).json({ success: false, message: "Database error" });
-  });
-
-    console.log("✅ SUCCESSFULLY REGISTERED");
-  });
-});
-
-app.post("/add-innovate", express.json(), async (req, res) => {
-  try {
-    const { email, innovateReference } = req.body;
-
-    const updated = await Registration.findOneAndUpdate(
-      { email },
-      { innovatePayment: innovateReference },
-      { new: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.json({ success: true });
 
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Registration failed"
+    });
+  }
+});
+
+app.post("/innovate-pay", async (req, res) => {
+  try {
+    const { email, reference, amount } = req.body;
+
+    const updated = await Registration.findOneAndUpdate(
+      { email },
+      {
+        innovatePayment: {
+          reference,
+          amount: Number(amount || 0)
+        }
+      },
+      { upsert: true, returnDocument: "after" }
+    );
+
+    res.json({ success: true, data: updated });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Innovate payment failed"
     });
   }
 });
