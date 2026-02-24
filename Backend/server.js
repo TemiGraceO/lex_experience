@@ -101,7 +101,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
 
     if (req.file) {
       // ✅ STORE FULL DOWNLOAD URL
-      const fileUrl = `https://your-app-domain.com/uploads/${req.file.filename}`;
+      const fileUrl = `https://lex-experience.vercel.app/uploads/${req.file.filename}`;
       registrationData.file = req.file.filename;
       registrationData.fileUrl = fileUrl;  // ← NEW: Complete URL
     }
