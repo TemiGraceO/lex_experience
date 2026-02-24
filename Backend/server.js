@@ -54,6 +54,7 @@ const registrationSchema = new mongoose.Schema({
   },
   interest: String,
   file: String,
+  fileUrl: String,
   createdAt: {
     type: Date,
     default: Date.now,
@@ -99,7 +100,10 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
     };
 
     if (req.file) {
+      // ✅ STORE FULL DOWNLOAD URL
+      const fileUrl = `https://your-app-domain.com/uploads/${req.file.filename}`;
       registrationData.file = req.file.filename;
+      registrationData.fileUrl = fileUrl;  // ← NEW: Complete URL
     }
 
     const saved = await Registration.findOneAndUpdate(
@@ -118,6 +122,19 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       success: false,
       message: "Registration failed",
     });
+  }
+});
+// ✅ GET FILE URL BY EMAIL
+app.get("/get-file/:email", async (req, res) => {
+  try {
+    const doc = await Registration.findOne({ email: req.params.email });
+    if (doc?.fileUrl) {
+      res.json({ success: true, fileUrl: doc.fileUrl });
+    } else {
+      res.json({ success: false, message: "No file found" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error" });
   }
 });
 
