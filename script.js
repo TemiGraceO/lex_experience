@@ -143,7 +143,7 @@ async function handlePayment() {
     payBtn.innerHTML = "Processing registration...";
 
     // Backend submission
-    await fetch("https://lex-xperience-backend.onrender.com/register", {
+    response = await fetch("https://lex-xperience-backend.onrender.com/register", {
   method: "POST",
   body: formData
 });
@@ -296,7 +296,7 @@ if (innovateYes) {
 
   payWithPaystack(12000, email, async (response) => {
     try {
-      await fetch("https://lex-xperience-backend.onrender.com/innovate-pay", {
+      response = await fetch("https://lex-xperience-backend.onrender.com/innovate-pay", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
