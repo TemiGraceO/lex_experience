@@ -119,7 +119,9 @@ async function handlePayment() {
         email,
         amount: baseAmount * 100,
         currency: "NGN",
-        callback: resolve,
+        callback: function(response) {
+        resolve(response);
+    },
         onClose: () => reject(new Error("Payment cancelled"))
       });
       handler.openIframe();
