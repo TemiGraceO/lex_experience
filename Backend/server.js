@@ -190,3 +190,5 @@ app.get("/get-file/:email", async (req, res) => {
 app.get("/", (req, res) => res.send("Lex Experience Backend - Cloudinary Ready!"));
 
 module.exports = app; // Vercel Serverless
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
