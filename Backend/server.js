@@ -17,10 +17,8 @@ app.use(cors());
 app.use(express.static("uploads"));
 
 // Ensure uploads dir exists (in tmp for Render)
-const uploadsDir = "public/uploads";
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+app.use(express.static(path.join(__dirname, 'public')));
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
 
 // Multer storage
 const storage = multer.diskStorage({
