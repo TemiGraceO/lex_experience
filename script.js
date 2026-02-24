@@ -401,4 +401,4 @@ document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timel
 // 🔥 INITIALIZE
 updateActiveLink();
 checkFormValidity();
-console.log("🚀 Lex Xperience script loaded perfectly!");
+console.log("Lex Xperience script loaded perfectly!");
