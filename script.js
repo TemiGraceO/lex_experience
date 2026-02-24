@@ -143,7 +143,7 @@ async function handlePayment() {
     payBtn.innerHTML = "Processing registration...";
 
     // Backend submission
-    const response = await fetch("http://localhost:5000/register", {
+    const response = await fetch("https://lex-xperience-backend.onrender.com/register", {
       method: "POST",
       body: formData
     });

@@ -28,6 +28,12 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+const mongoose = require("mongoose");
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log("MongoDB connected")).catch(err => console.error("MongoDB error:", err));
+
 // 🔥 ONE ENDPOINT FOR BOTH CASES - WORKS 100%
 app.post("/register", (req, res) => {
   console.log("🔥 REGISTRATION STARTED");
@@ -74,6 +80,7 @@ app.post("/register", (req, res) => {
     console.log("✅ SUCCESSFULLY REGISTERED");
   });
 });
+app.get("/", (req, res) => res.send("Backend alive!"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
