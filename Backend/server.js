@@ -1,5 +1,6 @@
 // server.js
-
+require("dotenv").config();
+const nodemailer = require("nodemailer");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -7,6 +8,25 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const mongoose = require("mongoose");
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false, // or true if you use port 465
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+async function sendLexEmail({ to, subject, html }) {
+  const mailOptions = {
+    from: process.env.SENDER_EMAIL,
+    to,
+    subject,
+    html,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
 
 const app = express();
 
@@ -112,6 +132,29 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       { upsert: true, new: true } // new = returnDocument:"after"
     );
 
+// send confirmation email (non-blocking but awaited here so you can catch errors)
+try {
+  await sendLexEmail({
+    to: registrationData.email,
+    subject: "Lex Experience Registration Successful",
+    html: `
+      <p>Hi ${registrationData.name},</p>
+      <p>Thank you for registering for <strong>Lex Experience</strong>.</p>
+      <p>Details:</p>
+      <ul>
+        <li>School: ${registrationData.school}</li>
+        <li>Interest: ${registrationData.interest || "N/A"}</li>
+        <li>Payment reference: ${registrationData.registrationPayment.reference}</li>
+        <li>Amount: ${registrationData.registrationPayment.amount}</li>
+      </ul>
+      <p>We’ll contact you soon with more information.</p>
+    `,
+  });
+} catch (e) {
+  console.error("Error sending Lex Experience email:", e);
+}
+
+
     return res.json({
       success: true,
       data: saved,
@@ -155,6 +198,26 @@ app.post("/innovate-pay", async (req, res) => {
       reference,
       amount: Number(amount || 0),
     });
+
+    try {
+  await sendLexEmail({
+    to: email.trim(),
+    subject: "Lex Innovate Registration Successful",
+    html: `
+      <p>Hi,</p>
+      <p>Your registration for <strong>Lex Innovate</strong> is complete.</p>
+      <p>Details:</p>
+      <ul>
+        <li>Payment reference: ${reference}</li>
+        <li>Amount: ${Number(amount || 0)}</li>
+      </ul>
+      <p>We’ll contact you soon with next steps.</p>
+    `,
+  });
+} catch (e) {
+  console.error("Error sending Lex Innovate email:", e);
+}
+
 
     return res.json({
       success: true,
