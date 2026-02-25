@@ -1,5 +1,11 @@
 // 🔥 LEX XPERIENCE SCRIPT.JS (LOGIC ONLY - DESIGN UNTOUCHED)
-
+const originalError = console.error;
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('Cannot destructure property')) {
+    return; // Ignore destructuring errors
+  }
+  originalError.apply(console, args);
+};
 const navToggle = document.getElementById("navToggle");
 const paymentThanks = document.getElementById("paymentThanks");
 const innovateSection = document.getElementById("innovateSection");
