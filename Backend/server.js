@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const mongoose = require("mongoose");
+const cloudinary = require('cloudinary').v2;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT || 587),
@@ -16,6 +17,11 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+});
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 async function sendLexEmail({ to, subject, html }) {
   const mailOptions = {
@@ -120,11 +126,14 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
     };
 
     if (req.file) {
-      // ✅ STORE FULL DOWNLOAD URL
-      const fileUrl = `https://lex-experience.vercel.app/uploads/${req.file.filename}`;
-      registrationData.file = req.file.filename;
-      registrationData.fileUrl = fileUrl;  // ← NEW: Complete URL
-    }
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    folder: 'lex-experience/ids',
+    resource_type: 'auto' // handles jpg/png/pdf
+  });
+  registrationData.file = req.file.filename;
+  registrationData.fileUrl = result.secure_url; // ✅ Real Cloudinary URL
+}
+
 
     const saved = await Registration.findOneAndUpdate(
       { email: registrationData.email },
