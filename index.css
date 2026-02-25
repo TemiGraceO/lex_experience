@@ -764,9 +764,7 @@
     .sponsor-logo.placeholder {
       background: radial-gradient(circle at top, rgba(247, 222, 80, 0.05), #050608);
     }
-    #alone{
-      width: 50%;
-    }
+    
 
     .sponsor-logo:hover {
       border-style: solid;
@@ -1002,7 +1000,7 @@
         grid-template-columns: minmax(0, 1fr);
       }
       #alone{
-      width: 100%;
+      width: 50%;
     }
       .hero-art {
         justify-content: center;
