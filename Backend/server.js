@@ -131,29 +131,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       registrationData,
       { upsert: true, new: true } // new = returnDocument:"after"
     );
-
-// send confirmation email (non-blocking but awaited here so you can catch errors)
-try {
-  await sendLexEmail({
-    to: registrationData.email,
-    subject: "Lex Experience Registration Successful",
-    html: `
-      <p>Hi ${registrationData.name},</p>
-      <p>Thank you for registering for <strong>Lex Experience</strong>.</p>
-      <p>Details:</p>
-      <ul>
-        <li>School: ${registrationData.school}</li>
-        <li>Interest: ${registrationData.interest || "N/A"}</li>
-        <li>Payment reference: ${registrationData.registrationPayment.reference}</li>
-        <li>Amount: ${registrationData.registrationPayment.amount}</li>
-      </ul>
-      <p>We’ll contact you soon with more information.</p>
-    `,
-  });
-} catch (e) {
-  console.error("Error sending Lex Experience email:", e);
-}
-
+    
 
     return res.json({
       success: true,
@@ -198,26 +176,6 @@ app.post("/innovate-pay", async (req, res) => {
       reference,
       amount: Number(amount || 0),
     });
-
-    try {
-  await sendLexEmail({
-    to: email.trim(),
-    subject: "Lex Innovate Registration Successful",
-    html: `
-      <p>Hi,</p>
-      <p>Your registration for <strong>Lex Innovate</strong> is complete.</p>
-      <p>Details:</p>
-      <ul>
-        <li>Payment reference: ${reference}</li>
-        <li>Amount: ${Number(amount || 0)}</li>
-      </ul>
-      <p>We’ll contact you soon with next steps.</p>
-    `,
-  });
-} catch (e) {
-  console.error("Error sending Lex Innovate email:", e);
-}
-
 
     return res.json({
       success: true,
