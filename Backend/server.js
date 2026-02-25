@@ -1,4 +1,3 @@
-// server.js
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 const express = require("express");
@@ -8,6 +7,8 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const mongoose = require("mongoose");
+
+const app = express();
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT || 587),
@@ -27,8 +28,6 @@ async function sendLexEmail({ to, subject, html }) {
 
   await transporter.sendMail(mailOptions);
 }
-
-const app = express();
 
 // Middlewares
 app.use(express.json());
