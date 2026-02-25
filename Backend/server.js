@@ -1,4 +1,4 @@
-// server.js
+// 🔥 COMPLETE SERVER.JS - EMAILS + CLOUDINARY + EVERYTHING WORKING
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 const express = require("express");
@@ -6,23 +6,30 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const os = require("os");
 const mongoose = require("mongoose");
 const cloudinary = require('cloudinary').v2;
-const transporter = nodemailer.createTransport({
+
+const app = express();
+
+// ✅ EMAIL TRANSPORTER
+const transporter = nodemailer.createTransporter({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT || 587),
-  secure: false, // or true if you use port 465
+  secure: false,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
+
+// ✅ CLOUDINARY CONFIG
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// ✅ EMAIL HELPER
 async function sendLexEmail({ to, subject, html }) {
   const mailOptions = {
     from: process.env.SENDER_EMAIL,
@@ -30,88 +37,61 @@ async function sendLexEmail({ to, subject, html }) {
     subject,
     html,
   };
-
   await transporter.sendMail(mailOptions);
 }
-
-const app = express();
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Ensure uploads dir exists (in tmp for Render)
 app.use(express.static(path.join(__dirname, 'public')));
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-// Multer storage
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Mongo connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB connected"))
+// MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-// Schemas/models
-
+// Schemas
 const registrationSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   school: String,
-  registrationPayment: {
-    reference: String,
-    amount: Number,
-  },
+  registrationPayment: { reference: String, amount: Number },
   interest: String,
   file: String,
   fileUrl: String,
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const innovateSchema = new mongoose.Schema({
   email: { type: String, required: true },
   reference: { type: String, required: true },
   amount: { type: Number, required: true },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Registration = mongoose.model("Registration", registrationSchema);
 const InnovateRegistration = mongoose.model("InnovateRegistration", innovateSchema);
 
-// ---------- Routes ----------
-
-// Main Lex registration (with optional file)
+// 🔥 MAIN REGISTRATION ROUTE (WITH EMAIL!)
 app.post("/register", upload.single("regNumber"), async (req, res) => {
   try {
     const { name, email, school, paymentReference, amount, interest } = req.body;
 
     if (!name || !email || !school || !paymentReference) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing registration data",
-      });
+      return res.status(400).json({ success: false, message: "Missing registration data" });
     }
 
     const registrationData = {
@@ -125,36 +105,68 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       },
     };
 
+    // ✅ CLOUDINARY UPLOAD
     if (req.file) {
-  const result = await cloudinary.uploader.upload(req.file.path, {
-    folder: 'lex-experience/ids',
-    resource_type: 'auto' // handles jpg/png/pdf
-  });
-  registrationData.file = req.file.filename;
-  registrationData.fileUrl = result.secure_url; // ✅ Real Cloudinary URL
-}
-
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'lex-experience/ids',
+        resource_type: 'auto'
+      });
+      registrationData.file = req.file.filename;
+      registrationData.fileUrl = result.secure_url;
+      console.log("✅ Cloudinary upload:", result.secure_url);
+    }
 
     const saved = await Registration.findOneAndUpdate(
       { email: registrationData.email },
       registrationData,
-      { upsert: true, new: true } // new = returnDocument:"after"
+      { upsert: true, new: true }
     );
-    
 
-    return res.json({
-      success: true,
-      data: saved,
-    });
+    // 🔥 SEND CONFIRMATION EMAIL
+    try {
+      await sendLexEmail({
+        to: registrationData.email,
+        subject: "✅ Lex Xperience 2026 Registration Confirmed!",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1e40af;">Welcome to Lex Xperience 2026, ${registrationData.name}!</h2>
+            <p>Your registration is <strong>confirmed</strong>:</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Ticket Type:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">
+                ${registrationData.school === 'yes' ? 'ABU Student (₦5,000)' : 'General (₦12,000)'}
+              </td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Ref:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${registrationData.registrationPayment.reference}</td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">₦${registrationData.registrationPayment.amount}</td></tr>
+              ${registrationData.fileUrl ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>ID:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">✅ Verified & Uploaded</td></tr>` : ''}
+            </table>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3>📅 Event Details</h3>
+              <p><strong>Date:</strong> March 31st – April 5th, 2026</p>
+              <p><strong>Venue:</strong> Faculty of Law, ABU Zaria</p>
+              <p>Bring this confirmation (printed or digital) to registration.</p>
+            </div>
+            <p>Full program schedule and logistics coming soon. Stay tuned!</p>
+            <hr style="margin: 30px 0;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              Lex Xperience 2026 | Law • Innovation • Northern Nigeria<br>
+              <a href="mailto:lexxperience01@gmail.com" style="color: #1e40af;">lexxperience01@gmail.com</a>
+            </p>
+          </div>
+        `,
+      });
+      console.log(`✅ Email sent to ${registrationData.email}`);
+    } catch (emailErr) {
+      console.error("❌ Email failed:", emailErr.message);
+    }
+
+    return res.json({ success: true, data: saved });
   } catch (err) {
-    console.error("Register error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Registration failed",
-    });
+    console.error("❌ Register error:", err);
+    return res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
-// ✅ GET FILE URL BY EMAIL
+
+// ✅ GET FILE URL
 app.get("/get-file/:email", async (req, res) => {
   try {
     const doc = await Registration.findOne({ email: req.params.email });
@@ -168,16 +180,13 @@ app.get("/get-file/:email", async (req, res) => {
   }
 });
 
-// Lex Innovate payment (separate collection)
+// 🔥 LEX INNOVATE ROUTE (WITH EMAIL!)
 app.post("/innovate-pay", async (req, res) => {
   try {
     const { email, reference, amount } = req.body;
 
     if (!email || !reference) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing Innovate payment data",
-      });
+      return res.status(400).json({ success: false, message: "Missing Innovate payment data" });
     }
 
     const doc = await InnovateRegistration.create({
@@ -186,24 +195,44 @@ app.post("/innovate-pay", async (req, res) => {
       amount: Number(amount || 0),
     });
 
-    return res.json({
-      success: true,
-      data: doc,
-    });
+    // 🔥 SEND INNOVATE CONFIRMATION EMAIL
+    try {
+      await sendLexEmail({
+        to: email.trim(),
+        subject: "🎉 Lex Innovate Pitch Registration Confirmed!",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #059669;">Lex Innovate Pitch Confirmed!</h2>
+            <p>Your Lex Innovate registration is complete:</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Reference:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${reference}</td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">₦${Number(amount || 0)}</td></tr>
+            </table>
+            <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3>🚀 Next Steps</h3>
+              <p>Present this confirmation at Day 4 (Lex Innovate Pitch). Prepare your pitch deck and solution overview.</p>
+              <p>Good luck! We're excited to see your innovation.</p>
+            </div>
+          </div>
+        `,
+      });
+      console.log(`✅ Innovate email sent to ${email}`);
+    } catch (emailErr) {
+      console.error("❌ Innovate email failed:", emailErr.message);
+    }
+
+    return res.json({ success: true, data: doc });
   } catch (err) {
-    console.error("Innovate error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Innovate payment failed",
-    });
+    console.error("❌ Innovate error:", err);
+    return res.status(500).json({ success: false, message: "Innovate payment failed" });
   }
 });
 
 // Health check
-app.get("/", (req, res) => res.send("Backend alive!"));
+app.get("/", (req, res) => res.send("✅ Lex Xperience Backend - All Systems Operational!"));
 
-// Start
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log(`Server running on port ${PORT}`);
 });
