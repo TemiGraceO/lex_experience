@@ -314,7 +314,6 @@ if (innovateYes) {
       return;
     }
 
-    if (!confirm("Add Lex Innovate Pitch for ₦12,000?")) return;
 
     payWithPaystack(12000, email, async (paystackResponse) => {
       try {
@@ -341,7 +340,6 @@ if (innovateYes) {
           throw new Error(result.message || "Innovate payment failed");
         }
 
-        alert("🎉 Lex Innovate registration successful!");
         innovateSection.style.display = "none";
       } catch (err) {
         console.error("Innovate error:", err);
