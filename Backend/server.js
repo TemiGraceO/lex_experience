@@ -105,29 +105,38 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       },
     };
 
-    // ✅ CLOUDINARY UPLOAD
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'lex-experience/ids',
-        resource_type: 'auto'
-      });
-      registrationData.file = req.file.filename;
-      registrationData.fileUrl = result.secure_url;
-      console.log("✅ Cloudinary upload:", result.secure_url);
-    }
-
+    // 🚀 SAVE TO DB FIRST (fast)
     const saved = await Registration.findOneAndUpdate(
       { email: registrationData.email },
       registrationData,
       { upsert: true, new: true }
     );
 
-    // 🔥 SEND CONFIRMATION EMAIL
-    try {
-      await sendLexEmail({
-        to: registrationData.email,
-        subject: "✅ Lex Xperience 2026 Registration Confirmed!",
-        html: `
+    // ⚡ RESPOND IMMEDIATELY - under 1 second!
+    res.json({ success: true, data: saved });
+
+    // 🔥 BACKGROUND TASKS (don't block response)
+    if (req.file) {
+      // Cloudinary in background
+      cloudinary.uploader.upload(req.file.path, {
+        folder: 'lex-experience/ids',
+        resource_type: 'auto'
+      })
+      .then(async (result) => {
+        await Registration.updateOne(
+          { _id: saved._id },
+          { file: req.file.filename, fileUrl: result.secure_url }
+        );
+        console.log("✅ Cloudinary done:", result.secure_url);
+      })
+      .catch(err => console.error("Cloudinary failed:", err));
+    }
+
+    // Email in background
+    sendLexEmail({
+      to: registrationData.email,
+      subject: "✅ Lex Xperience 2026 Registration Confirmed!",
+      html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #1e40af;">Welcome to Lex Xperience 2026, ${registrationData.name}!</h2>
             <p>Your registration is <strong>confirmed</strong>:</p>
@@ -153,19 +162,14 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             </p>
           </div>
         `,
-      });
-      console.log(`✅ Email sent to ${registrationData.email}`);
-    } catch (emailErr) {
-      console.error("❌ Email failed:", emailErr.message);
-    }
+      })
+      .catch(err => console.error("Email failed:", err));
 
-    return res.json({ success: true, data: saved });
   } catch (err) {
     console.error("❌ Register error:", err);
     return res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
-
 // ✅ GET FILE URL
 app.get("/get-file/:email", async (req, res) => {
   try {
