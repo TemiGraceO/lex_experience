@@ -85,7 +85,12 @@ function showPostPayment() {
 function lockUI(text = "Processing payment...") {
   document.body.classList.add('locked');
   registerForm.classList.add('locked');
-  registerForm.classList.add('form-processing'); // ADD THIS
+  registerForm.classList.add('form-processing');
+  
+  // Update loader message
+  const loaderMsg = document.getElementById('loaderMessage');
+  if (loaderMsg) loaderMsg.textContent = text;
+
   if (loadingOverlay) {
     loadingOverlay.classList.add('active');
     if (loadingText) loadingText.textContent = text;

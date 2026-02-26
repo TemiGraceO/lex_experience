@@ -1031,7 +1031,7 @@
       width: 100%;
     }
       #home{
-        margin-top: -12%;
+        margin-top: -11%;
       }
       .nav {
         position: fixed;
@@ -1238,4 +1238,59 @@
 /* Prevent mobile zoom on input focus */
 input, select, textarea {
   font-size: 16px !important;
+}
+/* Gold loader on form during processing */
+.form-processing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 6, 8, 0.35);
+  border-radius: var(--radius-lg);
+  z-index: 11;
+  pointer-events: all;
+  backdrop-filter: blur(1px);
+}
+
+.form-loader {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.form-processing .form-loader {
+  display: flex;
+}
+
+.form-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid rgba(247, 222, 80, 0.15);
+  border-top-color: var(--accent-gold);
+  border-right-color: var(--accent-gold-deep);
+  animation: goldSpin 0.9s linear infinite;
+}
+
+.form-loader-text {
+  font-size: 0.82rem;
+  color: var(--accent-gold-soft);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: loaderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes goldSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loaderPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
