@@ -258,7 +258,6 @@ async function handleInnovatePayment() {
 
     // SUCCESS
     innovateSection.style.display = "none";
-    alert("🎉 Lex Innovate added successfully! See you at the pitch!");
 
   } catch (error) {
     console.error("❌ Innovate error:", error);
