@@ -201,7 +201,7 @@ app.post("/innovate-pay", async (req, res) => {
 
     // 🔥 SEND INNOVATE CONFIRMATION EMAIL
     try {
-      await sendLexEmail({
+      sendLexEmail({
         to: email.trim(),
         subject: "🎉 Lex Innovate Pitch Registration Confirmed!",
         html: `
