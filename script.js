@@ -550,4 +550,44 @@ carouselTrack.addEventListener("mouseleave", startCarousel);
 
 // Start it
 startCarousel();
+// ---------- COUNTDOWN TIMER ----------
+const eventDate = new Date("March 31, 2026 00:00:00").getTime();
+
+function updateCountdown() {
+  const now = new Date().getTime();
+  const distance = eventDate - now;
+
+  if (distance <= 0) {
+    document.querySelector(".countdown").innerHTML =
+      '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>';
+    clearInterval(countdownInterval);
+    return;
+  }
+
+  const days  = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const mins  = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const secs  = Math.floor((distance % (1000 * 60)) / 1000);
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    const formatted = String(val).padStart(2, "0");
+    if (el.textContent !== formatted) {
+      el.textContent = formatted;
+      // Tick animation on change
+      el.classList.remove("tick");
+      void el.offsetWidth; // reflow
+      el.classList.add("tick");
+      setTimeout(() => el.classList.remove("tick"), 150);
+    }
+  }
+
+  setVal("cd-days",  days);
+  setVal("cd-hours", hours);
+  setVal("cd-mins",  mins);
+  setVal("cd-secs",  secs);
+}
+
+updateCountdown();
+const countdownInterval = setInterval(updateCountdown, 1000);
 console.log("✅ Lex Xperience 2026 - Production Ready!");
