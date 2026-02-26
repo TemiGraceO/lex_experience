@@ -1,6 +1,5 @@
 // 🔥 COMPLETE SERVER.JS - EMAILS + CLOUDINARY + EVERYTHING WORKING
 require("dotenv").config();
-const nodemailer = require("nodemailer");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -8,19 +7,27 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
 const cloudinary = require('cloudinary').v2;
+const { Resend } = require("resend");
 
 const app = express();
 
-// ✅ EMAIL TRANSPORTER
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// ✅ RESEND EMAIL (WORKS ON RENDER - NO SMTP BLOCKING)
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ✅ EMAIL HELPER - SIMPLE HTTP API (no timeouts!)
+async function sendLexEmail({ to, subject, html }) {
+  try {
+    await resend.emails.send({
+      from: process.env.SENDER_EMAIL || 'Lex Xperience <no-reply@lexexperience.ng>',
+      to,
+      subject,
+      html,
+    });
+    console.log(`✅ Email sent to ${to}`);
+  } catch (err) {
+    console.error("Email failed (non-blocking):", err.message);
+  }
+}
 
 // ✅ CLOUDINARY CONFIG
 cloudinary.config({
@@ -28,17 +35,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// ✅ EMAIL HELPER
-async function sendLexEmail({ to, subject, html }) {
-  const mailOptions = {
-    from: process.env.SENDER_EMAIL,
-    to,
-    subject,
-    html,
-  };
-  await transporter.sendMail(mailOptions);
-}
 
 // Middlewares
 app.use(express.json());
@@ -85,7 +81,7 @@ const innovateSchema = new mongoose.Schema({
 const Registration = mongoose.model("Registration", registrationSchema);
 const InnovateRegistration = mongoose.model("InnovateRegistration", innovateSchema);
 
-// 🔥 MAIN REGISTRATION ROUTE (WITH EMAIL!)
+// 🔥 MAIN REGISTRATION ROUTE (INSTANT RESPONSE + BACKGROUND TASKS)
 app.post("/register", upload.single("regNumber"), async (req, res) => {
   try {
     const { name, email, school, paymentReference, amount, interest } = req.body;
@@ -115,61 +111,63 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
     // ⚡ RESPOND IMMEDIATELY - under 1 second!
     res.json({ success: true, data: saved });
 
-    // 🔥 BACKGROUND TASKS (don't block response)
-    if (req.file) {
-      // Cloudinary in background
-      cloudinary.uploader.upload(req.file.path, {
-        folder: 'lex-experience/ids',
-        resource_type: 'auto'
-      })
-      .then(async (result) => {
-        await Registration.updateOne(
-          { _id: saved._id },
-          { file: req.file.filename, fileUrl: result.secure_url }
-        );
-        console.log("✅ Cloudinary done:", result.secure_url);
-      })
-      .catch(err => console.error("Cloudinary failed:", err));
-    }
+    // 🔥 BACKGROUND TASKS (don't block response) - using setImmediate for true non-blocking
+    setImmediate(async () => {
+      try {
+        // Cloudinary upload
+        if (req.file) {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'lex-experience/ids',
+            resource_type: 'auto'
+          });
+          await Registration.updateOne(
+            { _id: saved._id },
+            { file: req.file.filename, fileUrl: result.secure_url }
+          );
+          console.log("✅ Cloudinary done:", result.secure_url);
+        }
 
-    // Email in background
-    sendLexEmail({
-      to: registrationData.email,
-      subject: "✅ Lex Xperience 2026 Registration Confirmed!",
-      html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #1e40af;">Welcome to Lex Xperience 2026, ${registrationData.name}!</h2>
-            <p>Your registration is <strong>confirmed</strong>:</p>
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Ticket Type:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">
-                ${registrationData.school === 'yes' ? 'ABU Student (₦5,000)' : 'General (₦12,000)'}
-              </td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Ref:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${registrationData.registrationPayment.reference}</td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">₦${registrationData.registrationPayment.amount}</td></tr>
-              ${registrationData.fileUrl ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>ID:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">✅ Verified & Uploaded</td></tr>` : ''}
-            </table>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3>📅 Event Details</h3>
-              <p><strong>Date:</strong> March 31st – April 5th, 2026</p>
-              <p><strong>Venue:</strong> Faculty of Law, ABU Zaria</p>
-              <p>Bring this confirmation (printed or digital) to registration.</p>
+        // Email confirmation
+        await sendLexEmail({
+          to: registrationData.email,
+          subject: "✅ Lex Xperience 2026 Registration Confirmed!",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #1e40af;">Welcome to Lex Xperience 2026, ${registrationData.name}!</h2>
+              <p>Your registration is <strong>confirmed</strong>:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Ticket Type:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">
+                  ${registrationData.school === 'yes' ? 'ABU Student (₦5,000)' : 'General (₦12,000)'}
+                </td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Ref:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${registrationData.registrationPayment.reference}</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">₦${registrationData.registrationPayment.amount}</td></tr>
+              </table>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3>📅 Event Details</h3>
+                <p><strong>Date:</strong> March 31st – April 5th, 2026</p>
+                <p><strong>Venue:</strong> Faculty of Law, ABU Zaria</p>
+                <p>Bring this confirmation (printed or digital) to registration.</p>
+              </div>
+              <p>Full program schedule and logistics coming soon. Stay tuned!</p>
+              <hr style="margin: 30px 0;">
+              <p style="color: #666; font-size: 12px; text-align: center;">
+                Lex Xperience 2026 | Law • Innovation • Northern Nigeria<br>
+                <a href="mailto:lexxperience01@gmail.com" style="color: #1e40af;">lexxperience01@gmail.com</a>
+              </p>
             </div>
-            <p>Full program schedule and logistics coming soon. Stay tuned!</p>
-            <hr style="margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              Lex Xperience 2026 | Law • Innovation • Northern Nigeria<br>
-              <a href="mailto:lexxperience01@gmail.com" style="color: #1e40af;">lexxperience01@gmail.com</a>
-            </p>
-          </div>
-        `,
-      })
-      .catch(err => console.error("Email failed:", err));
+          `,
+        });
+      } catch (bgErr) {
+        console.error("Background task failed:", bgErr);
+      }
+    });
 
   } catch (err) {
     console.error("❌ Register error:", err);
     return res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
+
 // ✅ GET FILE URL
 app.get("/get-file/:email", async (req, res) => {
   try {
@@ -199,8 +197,8 @@ app.post("/innovate-pay", async (req, res) => {
       amount: Number(amount || 0),
     });
 
-    // 🔥 SEND INNOVATE CONFIRMATION EMAIL
-    try {
+    // 🔥 SEND INNOVATE CONFIRMATION EMAIL (non-blocking)
+    setImmediate(() => {
       sendLexEmail({
         to: email.trim(),
         subject: "🎉 Lex Innovate Pitch Registration Confirmed!",
@@ -220,10 +218,7 @@ app.post("/innovate-pay", async (req, res) => {
           </div>
         `,
       });
-      console.log(`✅ Innovate email sent to ${email}`);
-    } catch (emailErr) {
-      console.error("❌ Innovate email failed:", emailErr.message);
-    }
+    });
 
     return res.json({ success: true, data: doc });
   } catch (err) {
