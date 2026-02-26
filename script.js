@@ -508,4 +508,46 @@ document
 // ---------- INIT ----------
 updateActiveLink();
 checkFormValidity();
+// ---------- HERO CAROUSEL ----------
+const carouselTrack = document.querySelector(".carousel-track");
+const carouselDots = document.querySelectorAll(".carousel-dot");
+const totalSlides = document.querySelectorAll(".carousel-slide").length;
+let currentSlide = 0;
+let carouselTimer;
+
+function goToSlide(index) {
+  currentSlide = (index + totalSlides) % totalSlides;
+  carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
+  carouselDots.forEach((dot, i) => {
+    dot.classList.toggle("active", i === currentSlide);
+  });
+}
+
+function nextSlide() {
+  goToSlide(currentSlide + 1);
+}
+
+function startCarousel() {
+  carouselTimer = setInterval(nextSlide, 4000);
+}
+
+function resetCarousel() {
+  clearInterval(carouselTimer);
+  startCarousel();
+}
+
+// Dot click navigation
+carouselDots.forEach((dot, i) => {
+  dot.addEventListener("click", () => {
+    goToSlide(i);
+    resetCarousel();
+  });
+});
+
+// Pause on hover
+carouselTrack.addEventListener("mouseenter", () => clearInterval(carouselTimer));
+carouselTrack.addEventListener("mouseleave", startCarousel);
+
+// Start it
+startCarousel();
 console.log("✅ Lex Xperience 2026 - Production Ready!");

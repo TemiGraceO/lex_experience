@@ -1307,3 +1307,90 @@ input, select, textarea {
   0%, 100% { border-color: var(--accent-gold); }
   50% { border-color: transparent; }
 }
+/* ---------- HERO CAROUSEL ---------- */
+.hero-carousel {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.carousel-track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.carousel-slide {
+  min-width: 100%;
+  position: relative;
+}
+
+.carousel-slide img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+  mix-blend-mode: luminosity;
+  filter: saturate(1.1);
+  transition: filter 0.3s ease;
+}
+
+.carousel-slide img:hover {
+  filter: saturate(1.3);
+}
+
+/* Gold overlay shimmer on each slide */
+.carousel-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(247, 222, 80, 0.08) 0%,
+    transparent 50%,
+    rgba(247, 222, 80, 0.04) 100%
+  );
+  pointer-events: none;
+}
+
+/* Dot indicators */
+.carousel-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 5;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(249, 250, 251, 0.35);
+  border: 1px solid rgba(247, 222, 80, 0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot.active {
+  background: var(--accent-gold);
+  width: 24px;
+  border-color: var(--accent-gold);
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .carousel-slide img {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-slide img {
+    height: 230px;
+  }
+}
