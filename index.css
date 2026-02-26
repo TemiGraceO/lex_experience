@@ -1224,3 +1224,18 @@
   cursor: not-allowed;
   backdrop-filter: blur(1px);
 }
+/* Prevent layout shift on success */
+#formFields,
+#paymentThanks {
+  transition: opacity 0.4s ease;
+}
+
+#paymentThanks {
+  display: none;
+  min-height: 250px; /* holds the space so page doesn't shift */
+}
+
+/* Prevent mobile zoom on input focus */
+input, select, textarea {
+  font-size: 16px !important;
+}

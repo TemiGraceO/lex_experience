@@ -67,9 +67,19 @@ function checkFormValidity() {
 
 // ---------- UI HELPERS ----------
 function showPostPayment() {
-  formFields.style.display = "none";
-  paymentThanks.style.display = "block";
-  innovateSection.style.display = "block";
+  // Scroll to the thank you area first, THEN swap content
+  const formTop = registerForm.getBoundingClientRect().top + window.scrollY - 100;
+  
+  window.scrollTo({
+    top: formTop,
+    behavior: "smooth"
+  });
+
+  setTimeout(() => {
+    formFields.style.display = "none";
+    paymentThanks.style.display = "block";
+    innovateSection.style.display = "block";
+  }, 400); // slight delay so scroll happens first
 }
 
 function lockUI(text = "Processing payment...") {
