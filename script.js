@@ -75,6 +75,7 @@ function showPostPayment() {
 function lockUI(text = "Processing payment...") {
   document.body.classList.add('locked');
   registerForm.classList.add('locked');
+  registerForm.classList.add('form-processing'); // ADD THIS
   if (loadingOverlay) {
     loadingOverlay.classList.add('active');
     if (loadingText) loadingText.textContent = text;
@@ -84,6 +85,7 @@ function lockUI(text = "Processing payment...") {
 function unlockUI() {
   document.body.classList.remove('locked');
   registerForm.classList.remove('locked');
+  registerForm.classList.remove('form-processing'); // ADD THIS
   if (loadingOverlay) loadingOverlay.classList.remove('active');
 }
 
@@ -207,22 +209,38 @@ async function handlePayment() {
 // ---------- LEX INNOVATE PAYMENT ----------
 async function handleInnovatePayment() {
   console.log("🚀 Innovate payment starting...");
-  
   const btn = innovateYes;
   const originalText = btn.innerHTML;
-  btn.disabled = true;
+
+  // 🔒 LOCK BOTH BUTTONS IMMEDIATELY
+  innovateYes.disabled = true;
+  innovateNo.disabled = true;
+  innovateYes.style.pointerEvents = "none";
+  innovateNo.style.pointerEvents = "none";
+  innovateYes.style.opacity = "0.45";
+  innovateNo.style.opacity = "0.45";
+  innovateYes.style.cursor = "not-allowed";
+  innovateNo.style.cursor = "not-allowed";
+
   btn.innerHTML = "Processing Innovate...";
 
   const email = document.getElementById("email").value.trim();
   if (!email) {
     alert("Please enter your email first");
-    btn.disabled = false;
+    // 🔓 UNLOCK ON EARLY EXIT
+    innovateYes.disabled = false;
+    innovateNo.disabled = false;
+    innovateYes.style.pointerEvents = "";
+    innovateNo.style.pointerEvents = "";
+    innovateYes.style.opacity = "";
+    innovateNo.style.opacity = "";
+    innovateYes.style.cursor = "";
+    innovateNo.style.cursor = "";
     btn.innerHTML = originalText;
     return;
   }
 
   try {
-    // 🔥 PAYSTACK PAYMENT
     const paystackResponse = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
         key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
@@ -238,7 +256,6 @@ async function handleInnovatePayment() {
     console.log("✅ Innovate Paystack success:", paystackResponse.reference);
     btn.innerHTML = "Saving Innovate...";
 
-    // 🔥 BACKEND SAVE
     const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -256,18 +273,24 @@ async function handleInnovatePayment() {
       throw new Error(result.message || "Innovate payment failed");
     }
 
-    // SUCCESS
     innovateSection.style.display = "none";
 
   } catch (error) {
     console.error("❌ Innovate error:", error);
     alert("Failed to save Innovate payment: " + error.message);
   } finally {
-    btn.disabled = false;
+    // 🔓 ALWAYS UNLOCK AT THE END
+    innovateYes.disabled = false;
+    innovateNo.disabled = false;
+    innovateYes.style.pointerEvents = "";
+    innovateNo.style.pointerEvents = "";
+    innovateYes.style.opacity = "";
+    innovateNo.style.opacity = "";
+    innovateYes.style.cursor = "";
+    innovateNo.style.cursor = "";
     btn.innerHTML = originalText;
   }
 }
-
 // ---------- EVENT LISTENERS ----------
 
 // File upload (ABU ID only)
