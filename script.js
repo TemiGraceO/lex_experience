@@ -64,7 +64,39 @@ function checkFormValidity() {
   payBtn.style.opacity = isValid ? "1" : "0.6";
   payBtn.style.cursor = isValid ? "pointer" : "not-allowed";
 }
+// ---------- TYPEWRITER EFFECT ----------
+const typewriterEl = document.getElementById("typewriter");
+const typewriterWords = ["Architects", "Pioneers", "Builders", "Visionaries"];
+let wordIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
 
+function typeWrite() {
+  const currentWord = typewriterWords[wordIndex];
+
+  if (isDeleting) {
+    typewriterEl.textContent = currentWord.substring(0, charIndex - 1);
+    charIndex--;
+  } else {
+    typewriterEl.textContent = currentWord.substring(0, charIndex + 1);
+    charIndex++;
+  }
+
+  if (!isDeleting && charIndex === currentWord.length) {
+    // Pause at end of word
+    setTimeout(() => { isDeleting = true; typeWrite(); }, 1800);
+    return;
+  }
+
+  if (isDeleting && charIndex === 0) {
+    isDeleting = false;
+    wordIndex = (wordIndex + 1) % typewriterWords.length;
+  }
+
+  setTimeout(typeWrite, isDeleting ? 60 : 100);
+}
+
+typeWrite();
 // ---------- UI HELPERS ----------
 function showPostPayment() {
   // Scroll to the thank you area first, THEN swap content
