@@ -2,7 +2,7 @@
 const originalError = console.error;
 console.error = (...args) => {
   if (typeof args[0] === 'string' && args[0].includes('Cannot destructure property')) {
-    return; // Ignore Paystack destructuring errors
+    return;
   }
   originalError.apply(console, args);
 };
@@ -64,6 +64,7 @@ function checkFormValidity() {
   payBtn.style.opacity = isValid ? "1" : "0.6";
   payBtn.style.cursor = isValid ? "pointer" : "not-allowed";
 }
+
 // ---------- TYPEWRITER EFFECT ----------
 const typewriterEl = document.getElementById("typewriter");
 const typewriterWords = ["Architects", "Pioneers", "Builders", "Visionaries"];
@@ -83,7 +84,6 @@ function typeWrite() {
   }
 
   if (!isDeleting && charIndex === currentWord.length) {
-    // Pause at end of word
     setTimeout(() => { isDeleting = true; typeWrite(); }, 1800);
     return;
   }
@@ -97,11 +97,11 @@ function typeWrite() {
 }
 
 typeWrite();
+
 // ---------- UI HELPERS ----------
 function showPostPayment() {
-  // Scroll to the thank you area first, THEN swap content
   const formTop = registerForm.getBoundingClientRect().top + window.scrollY - 100;
-  
+
   window.scrollTo({
     top: formTop,
     behavior: "smooth"
@@ -111,15 +111,14 @@ function showPostPayment() {
     formFields.style.display = "none";
     paymentThanks.style.display = "block";
     innovateSection.style.display = "block";
-  }, 400); // slight delay so scroll happens first
+  }, 400);
 }
 
 function lockUI(text = "Processing payment...") {
   document.body.classList.add('locked');
   registerForm.classList.add('locked');
   registerForm.classList.add('form-processing');
-  
-  // Update loader message
+
   const loaderMsg = document.getElementById('loaderMessage');
   if (loaderMsg) loaderMsg.textContent = text;
 
@@ -132,7 +131,7 @@ function lockUI(text = "Processing payment...") {
 function unlockUI() {
   document.body.classList.remove('locked');
   registerForm.classList.remove('locked');
-  registerForm.classList.remove('form-processing'); // ADD THIS
+  registerForm.classList.remove('form-processing');
   if (loadingOverlay) loadingOverlay.classList.remove('active');
 }
 
@@ -167,11 +166,11 @@ function verifyIDCard(file) {
 // ---------- MAIN PAYMENT FLOW ----------
 async function handlePayment() {
   console.log("🚀 Main payment starting...");
-  
+
   const btn = payBtn;
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  
+
   lockUI("Processing payment...");
 
   try {
@@ -188,7 +187,6 @@ async function handlePayment() {
       throw new Error("Please verify your ABU ID first");
     }
 
-    // 🔥 PAYSTACK PAYMENT
     if (loadingText) loadingText.textContent = "Processing payment...";
     const paymentResult = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
@@ -204,7 +202,6 @@ async function handlePayment() {
 
     console.log("✅ Main payment success:", paymentResult.reference);
 
-    // 🔥 BACKEND REGISTRATION
     if (loadingText) loadingText.textContent = "Registering you...";
     btn.innerHTML = "Processing registration...";
 
@@ -259,7 +256,6 @@ async function handleInnovatePayment() {
   const btn = innovateYes;
   const originalText = btn.innerHTML;
 
-  // 🔒 LOCK BOTH BUTTONS IMMEDIATELY
   innovateYes.disabled = true;
   innovateNo.disabled = true;
   innovateYes.style.pointerEvents = "none";
@@ -274,7 +270,6 @@ async function handleInnovatePayment() {
   const email = document.getElementById("email").value.trim();
   if (!email) {
     alert("Please enter your email first");
-    // 🔓 UNLOCK ON EARLY EXIT
     innovateYes.disabled = false;
     innovateNo.disabled = false;
     innovateYes.style.pointerEvents = "";
@@ -326,7 +321,6 @@ async function handleInnovatePayment() {
     console.error("❌ Innovate error:", error);
     alert("Failed to save Innovate payment: " + error.message);
   } finally {
-    // 🔓 ALWAYS UNLOCK AT THE END
     innovateYes.disabled = false;
     innovateNo.disabled = false;
     innovateYes.style.pointerEvents = "";
@@ -338,6 +332,7 @@ async function handleInnovatePayment() {
     btn.innerHTML = originalText;
   }
 }
+
 // ---------- EVENT LISTENERS ----------
 
 // File upload (ABU ID only)
@@ -415,7 +410,7 @@ schoolSelectEl.addEventListener("change", function () {
   } else {
     baseAmount = 12000;
     paymentText.textContent = "Non-ABU Student Ticket: ₦12,000";
-    abuVerified = true; // No ID required for non-ABU
+    abuVerified = true;
   }
 
   paymentSection.style.display = "block";
@@ -508,58 +503,20 @@ document
 // ---------- INIT ----------
 updateActiveLink();
 checkFormValidity();
-// ---------- HERO CAROUSEL ----------
-const carouselTrack = document.querySelector(".carousel-track");
-const carouselDots = document.querySelectorAll(".carousel-dot");
-const totalSlides = document.querySelectorAll(".carousel-slide").length;
-let currentSlide = 0;
-let carouselTimer;
 
-function goToSlide(index) {
-  currentSlide = (index + totalSlides) % totalSlides;
-  carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
-  carouselDots.forEach((dot, i) => {
-    dot.classList.toggle("active", i === currentSlide);
-  });
-}
-
-function nextSlide() {
-  goToSlide(currentSlide + 1);
-}
-
-function startCarousel() {
-  carouselTimer = setInterval(nextSlide, 4000);
-}
-
-function resetCarousel() {
-  clearInterval(carouselTimer);
-  startCarousel();
-}
-
-// Dot click navigation
-carouselDots.forEach((dot, i) => {
-  dot.addEventListener("click", () => {
-    goToSlide(i);
-    resetCarousel();
-  });
-});
-
-// Pause on hover
-carouselTrack.addEventListener("mouseenter", () => clearInterval(carouselTimer));
-carouselTrack.addEventListener("mouseleave", startCarousel);
-
-// Start it
-startCarousel();
 // ---------- COUNTDOWN TIMER ----------
-const eventDate = new Date("March 31, 2026 00:00:00").getTime();
+const eventDate = new Date("2026-03-31T00:00:00").getTime();
+let countdownInterval;
 
 function updateCountdown() {
-  const now = new Date().getTime();
+  const now = Date.now();
   const distance = eventDate - now;
 
   if (distance <= 0) {
-    document.querySelector(".countdown").innerHTML =
-      '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>';
+    const countdownEl = document.querySelector(".countdown");
+    if (countdownEl) {
+      countdownEl.innerHTML = '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>';
+    }
     clearInterval(countdownInterval);
     return;
   }
@@ -571,12 +528,12 @@ function updateCountdown() {
 
   function setVal(id, val) {
     const el = document.getElementById(id);
+    if (!el) return;
     const formatted = String(val).padStart(2, "0");
     if (el.textContent !== formatted) {
       el.textContent = formatted;
-      // Tick animation on change
       el.classList.remove("tick");
-      void el.offsetWidth; // reflow
+      void el.offsetWidth;
       el.classList.add("tick");
       setTimeout(() => el.classList.remove("tick"), 150);
     }
@@ -589,5 +546,6 @@ function updateCountdown() {
 }
 
 updateCountdown();
-const countdownInterval = setInterval(updateCountdown, 1000);
+countdownInterval = setInterval(updateCountdown, 1000);
+
 console.log("✅ Lex Xperience 2026 - Production Ready!");
