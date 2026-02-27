@@ -552,5 +552,18 @@ function updateCountdown() {
 
 updateCountdown();
 countdownInterval = setInterval(updateCountdown, 1000);
+// ---------- BACK TO TOP ----------
+const backToTopBtn = document.getElementById("backToTop");
 
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 400) {
+    backToTopBtn.classList.add("visible");
+  } else {
+    backToTopBtn.classList.remove("visible");
+  }
+}, { passive: true });
+
+backToTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 console.log("✅ Lex Xperience 2026 - Production Ready!");
