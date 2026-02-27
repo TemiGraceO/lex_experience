@@ -266,17 +266,17 @@
         <div id="formFields">
           <div class="form-group fade-in" data-delay="0.1s">
             <label for="name">Full Name<span>*</span></label>
-            <input type="text" id="name" name="name" placeholder="e.g. Grace Olorunfemi" required />
+            <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Grace Olorunfemi" required />
             <small class="error-message"></small>
           </div>
           <div class="form-group fade-in" data-delay="0.2s">
             <label for="email">Email Address<span>*</span></label>
-            <input type="email" id="email" name="email" placeholder="e.g. grace@example.com" required />
+            <input type="email" id="email" name="email" autocomplete="email" placeholder="e.g. grace@example.com" required />
             <small class="error-message"></small>
           </div>
           <div class="form-group fade-in" data-delay="0.3s">
             <label for="school">Are you a student of Ahmadu Bello University?<span>*</span></label>
-            <select id="school" name="school" required>
+            <select id="school" name="school" autocomplete="off" required>
               <option value="">Select an option</option>
               <option value="yes">Yes, I am an ABU student</option>
               <option value="no">No, I am not an ABU student</option>
@@ -304,7 +304,7 @@
 
           <div class="form-group fade-in" data-delay="0.5s">
             <label for="interest">What are you most excited to explore?</label>
-            <textarea id="interest" name="interest" rows="3" placeholder="Tell us what you're most excited to explore..."></textarea>
+            <textarea id="interest" name="interest" autocomplete="off" rows="3" placeholder="Tell us what you're most excited to explore..."></textarea>
           </div>
 
           <div class="form-group" id="paymentSection" style="display:none;">
