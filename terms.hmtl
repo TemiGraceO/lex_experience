@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Terms of Service | Lex Xperience 2026</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-main: #050608;
+      --accent-gold: #f7de50;
+      --accent-gold-deep: #b99a2d;
+      --accent-gold-soft: #f2e7a2;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #151826 0, #050608 48%, #020308 100%);
+      color: var(--text-main);
+      line-height: 1.8;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .header {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(22px);
+      background: rgba(5, 6, 8, 0.92);
+      border-bottom: 1px solid rgba(249, 250, 251, 0.07);
+      padding: 0.85rem 0;
+    }
+    .header-inner {
+      width: min(900px, 100% - 2.5rem);
+      margin-inline: auto;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-weight: 700; font-size: 1.2rem; text-decoration: none; letter-spacing: 0.06em; }
+    .logo-main { color: #f9fafb; }
+    .logo-highlight { color: var(--accent-gold); }
+    .back-link {
+      font-size: 0.85rem; color: var(--text-muted);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.2s ease;
+    }
+    .back-link:hover { color: var(--accent-gold-soft); }
+
+    .page-wrapper {
+      width: min(900px, 100% - 2.5rem);
+      margin-inline: auto;
+      padding: 4rem 0 6rem;
+    }
+    .page-kicker {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em;
+      color: var(--accent-gold-soft); margin-bottom: 0.75rem;
+    }
+    .page-title {
+      font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700;
+      margin-bottom: 0.5rem; line-height: 1.2;
+    }
+    .page-title span { color: var(--accent-gold); }
+    .page-meta {
+      font-size: 0.85rem; color: var(--text-muted);
+      margin-bottom: 3rem; padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(249, 250, 251, 0.08);
+    }
+    .highlight-box {
+      background: rgba(247, 222, 80, 0.06);
+      border: 1px solid rgba(247, 222, 80, 0.2);
+      border-radius: var(--radius-md);
+      padding: 1.2rem 1.5rem; margin-bottom: 2.5rem;
+      font-size: 0.92rem; color: var(--accent-gold-soft); line-height: 1.7;
+    }
+    .section-block { margin-bottom: 2.2rem; }
+    .section-block h2 {
+      font-size: 1.05rem; font-weight: 600;
+      color: var(--accent-gold-soft); margin-bottom: 0.75rem;
+      padding-left: 0.75rem;
+      border-left: 3px solid var(--accent-gold);
+    }
+    .section-block p { font-size: 0.93rem; color: var(--text-muted); margin-bottom: 0.6rem; }
+    .section-block ul { list-style: none; margin-bottom: 0.75rem; }
+    .section-block ul li {
+      font-size: 0.93rem; color: var(--text-muted);
+      padding: 0.25rem 0 0.25rem 1.4rem; position: relative;
+    }
+    .section-block ul li::before {
+      content: "→"; position: absolute; left: 0;
+      color: var(--accent-gold); font-size: 0.78rem; top: 0.35rem;
+    }
+    .warning-box {
+      background: rgba(252, 165, 165, 0.06);
+      border: 1px solid rgba(252, 165, 165, 0.2);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.5rem; margin: 1rem 0;
+      font-size: 0.88rem; color: #fecaca;
+    }
+    .contact-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(247, 222, 80, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem; margin-top: 3rem; text-align: center;
+    }
+    .contact-card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+    .contact-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .contact-card a { color: var(--accent-gold); text-decoration: none; font-size: 0.95rem; }
+    .contact-card a:hover { text-decoration: underline; }
+
+    .footer-simple {
+      border-top: 1px solid rgba(249, 250, 251, 0.08);
+      text-align: center; padding: 1.5rem 0;
+      font-size: 0.8rem; color: var(--text-muted); background: #020308;
+    }
+    .footer-simple a { color: var(--accent-gold-soft); text-decoration: none; margin: 0 0.5rem; }
+    .footer-simple a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-main">Lex</span><span class="logo-highlight">Xperience</span>
+      </a>
+      <a href="index.html" class="back-link">← Back to Site</a>
+    </div>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">Legal</p>
+    <h1 class="page-title">Terms of <span>Service</span></h1>
+    <p class="page-meta">Last updated: January 2026 &nbsp;•&nbsp; Effective: March 31, 2026</p>
+
+    <div class="highlight-box">
+      By registering for or attending Lex Xperience 2026, you agree to the following terms and conditions. Please read them carefully before completing your registration.
+    </div>
+
+    <div class="section-block">
+      <h2>1. About the Event</h2>
+      <p>Lex Xperience 2026 is a student-led legal innovation event organized by the Lex Xperience team under the Faculty of Law, Ahmadu Bello University (ABU), Zaria. The event is scheduled to run from March 31st to April 5th, 2026.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>2. Registration & Eligibility</h2>
+      <p>By registering, you confirm that:</p>
+      <ul>
+        <li>The information you provided is accurate and truthful</li>
+        <li>You are a student, young professional, or otherwise eligible attendee</li>
+        <li>ABU students who select the discounted rate must upload a valid ABU ID card or admission letter</li>
+        <li>Providing false information may result in cancellation of your registration without a refund</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <h2>3. Ticket Pricing</h2>
+      <ul>
+        <li>ABU Students: ₦5,000 (requires valid ABU ID verification)</li>
+        <li>Non-ABU Attendees: ₦12,000</li>
+        <li>Lex Innovate Pitch Add-on: ₦12,000 (optional, available after main registration)</li>
+      </ul>
+      <p>All prices are in Nigerian Naira (NGN) and are inclusive of applicable fees.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>4. Payment</h2>
+      <p>All payments are processed through Paystack, a secure and trusted payment gateway. By proceeding with payment, you also agree to Paystack's terms of service. Your ticket is only confirmed upon successful payment and receipt of a confirmation email.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>5. Refund & Cancellation Policy</h2>
+      <div class="warning-box">
+        ⚠️ All ticket sales are final. We do not offer refunds once payment has been made, except in the event that the Lex Xperience organizing team cancels or significantly reschedules the event.
+      </div>
+      <p>If the event is cancelled by the organizers, registered attendees will be notified via email and a full refund will be processed within 14 working days.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>6. Event Conduct</h2>
+      <p>All attendees are expected to:</p>
+      <ul>
+        <li>Behave respectfully toward speakers, staff, and fellow attendees</li>
+        <li>Comply with all venue rules and regulations</li>
+        <li>Not engage in any form of harassment, discrimination, or disruptive behavior</li>
+        <li>Follow all instructions from event organizers and security personnel</li>
+      </ul>
+      <p>The organizers reserve the right to remove any attendee from the event without a refund if these standards are violated.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>7. Photography & Media</h2>
+      <p>By attending Lex Xperience 2026, you consent to being photographed or filmed during the event. Images and recordings may be used for promotional, educational, or social media purposes by the Lex Xperience team. If you object to being photographed, please notify a member of the organizing team at the event.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>8. Intellectual Property</h2>
+      <p>All content presented at Lex Xperience — including presentations, speeches, panel discussions, and workshop materials — remains the intellectual property of the respective speakers and organizers. Recording, reproducing, or distributing session content without prior written consent is prohibited.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>9. Limitation of Liability</h2>
+      <p>The Lex Xperience organizing team shall not be liable for:</p>
+      <ul>
+        <li>Any loss, theft, or damage to personal belongings at the event</li>
+        <li>Any personal injury sustained at the event venue</li>
+        <li>Changes to the event programme, speakers, or schedule</li>
+        <li>Any indirect or consequential losses arising from attendance or non-attendance</li>
+      </ul>
+      <p>Attendees participate in all event activities at their own risk.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>10. Event Changes</h2>
+      <p>The organizers reserve the right to modify the event programme, speakers, venue, or schedule at any time. Registered attendees will be notified of material changes via email. Minor changes to the programme do not entitle attendees to a refund.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>11. Governing Law</h2>
+      <p>These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes arising from participation in Lex Xperience 2026 shall be resolved in accordance with Nigerian law.</p>
+    </div>
+
+    <div class="section-block">
+      <h2>12. Acceptance of Terms</h2>
+      <p>By completing your registration and making payment, you confirm that you have read, understood, and agreed to these Terms of Service and our Privacy Policy.</p>
+    </div>
+
+    <div class="contact-card">
+      <h3>Questions about these terms?</h3>
+      <p>Contact the Lex Xperience organizing team.</p>
+      <a href="mailto:lexxperience01@gmail.com">lexxperience01@gmail.com</a>
+    </div>
+  </main>
+
+  <footer class="footer-simple">
+    <p>
+      &copy; 2026 Lex Xperience. All rights reserved.
+      &nbsp;|&nbsp;
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+    </p>
+  </footer>
+
+</body>
+</html>
