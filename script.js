@@ -114,7 +114,7 @@ function showPostPayment() {
   }, 400);
 }
 
-function lockUI(text = "Processing payment...") {
+function lockUI(text = "Processing...") {
   document.body.classList.add('locked');
   registerForm.classList.add('locked');
   registerForm.classList.add('form-processing');
@@ -165,7 +165,7 @@ function verifyIDCard(file) {
 
 // ---------- MAIN PAYMENT FLOW ----------
 async function handlePayment() {
-  console.log("Main payment starting...");
+  console.log("🚀 Main payment starting...");
 
   const btn = payBtn;
   const originalText = btn.innerHTML;
@@ -187,7 +187,9 @@ async function handlePayment() {
       throw new Error("Please verify your ABU ID first");
     }
 
-    if (loadingText) loadingText.textContent = "Processing payment...";
+    // 🔥 HIDE LOADER BEFORE PAYSTACK OPENS
+    registerForm.classList.remove('form-processing');
+
     const paymentResult = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
         key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
@@ -200,9 +202,12 @@ async function handlePayment() {
       handler.openIframe();
     });
 
-    console.log("Main payment success:", paymentResult.reference);
+    console.log("✅ Main payment success:", paymentResult.reference);
 
-    if (loadingText) loadingText.textContent = "Registering you...";
+    // 🔥 SHOW LOADER AGAIN AFTER PAYSTACK CLOSES
+    registerForm.classList.add('form-processing');
+    const loaderMsg = document.getElementById('loaderMessage');
+    if (loaderMsg) loaderMsg.textContent = "Processing...";
     btn.innerHTML = "Processing registration...";
 
     const formData = new FormData();
@@ -237,11 +242,11 @@ async function handlePayment() {
       throw new Error(result.message || "Registration failed");
     }
 
-    console.log("Registration complete!");
+    console.log("🎉 Registration complete!");
     showPostPayment();
 
   } catch (error) {
-    console.error("Main payment error:", error);
+    console.error("❌ Main payment error:", error);
     alert("Registration failed: " + error.message);
   } finally {
     unlockUI();
@@ -265,7 +270,7 @@ async function handleInnovatePayment() {
   innovateYes.style.cursor = "not-allowed";
   innovateNo.style.cursor = "not-allowed";
 
-  btn.innerHTML = "Processing Innovate...";
+  btn.innerHTML = "Processing...";
 
   const email = document.getElementById("email").value.trim();
   if (!email) {
@@ -296,7 +301,7 @@ async function handleInnovatePayment() {
     });
 
     console.log("Innovate Paystack success:", paystackResponse.reference);
-    btn.innerHTML = "Processing Payment...";
+    btn.innerHTML = "Processing...";
 
     const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
       method: "POST",
