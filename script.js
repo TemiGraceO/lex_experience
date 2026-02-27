@@ -157,7 +157,7 @@ function verifyIDCard(file) {
   if (MOCK_VERIFICATION_MODE) {
     setTimeout(() => {
       abuVerified = true;
-      showVerificationSuccess("✅ ABU ID verified successfully!");
+      showVerificationSuccess("✅ ABU ID uploaded successfully!");
       checkFormValidity();
     }, 1200);
   }
