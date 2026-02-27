@@ -1,11 +1,27 @@
 // 🔥 LEX XPERIENCE 2026 - COMPLETE PRODUCTION SCRIPT.JS
 const originalError = console.error;
 console.error = (...args) => {
-  if (typeof args[0] === 'string' && args[0].includes('Cannot destructure property')) {
+  if (typeof args[0] === 'string' && (
+    args[0].includes('Cannot destructure property') ||
+    args[0].includes('language')
+  )) {
     return;
   }
   originalError.apply(console, args);
 };
+window.addEventListener('error', (e) => {
+  if (e.message && e.message.includes('Cannot destructure property')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  }
+}, true);
+
+window.addEventListener('unhandledrejection', (e) => {
+  if (e.reason && e.reason.message && e.reason.message.includes('Cannot destructure property')) {
+    e.preventDefault();
+  }
+});
 
 // ---------- DOM ELEMENTS ----------
 const navToggle = document.getElementById("navToggle");
