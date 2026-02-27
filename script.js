@@ -157,7 +157,7 @@ function verifyIDCard(file) {
   if (MOCK_VERIFICATION_MODE) {
     setTimeout(() => {
       abuVerified = true;
-      showVerificationSuccess("✅ ABU ID uploaded successfully!");
+      showVerificationSuccess("ABU ID uploaded successfully!");
       checkFormValidity();
     }, 1200);
   }
@@ -165,7 +165,7 @@ function verifyIDCard(file) {
 
 // ---------- MAIN PAYMENT FLOW ----------
 async function handlePayment() {
-  console.log("🚀 Main payment starting...");
+  console.log("Main payment starting...");
 
   const btn = payBtn;
   const originalText = btn.innerHTML;
@@ -200,7 +200,7 @@ async function handlePayment() {
       handler.openIframe();
     });
 
-    console.log("✅ Main payment success:", paymentResult.reference);
+    console.log("Main payment success:", paymentResult.reference);
 
     if (loadingText) loadingText.textContent = "Registering you...";
     btn.innerHTML = "Processing registration...";
@@ -237,11 +237,11 @@ async function handlePayment() {
       throw new Error(result.message || "Registration failed");
     }
 
-    console.log("🎉 Registration complete!");
+    console.log("Registration complete!");
     showPostPayment();
 
   } catch (error) {
-    console.error("❌ Main payment error:", error);
+    console.error("Main payment error:", error);
     alert("Registration failed: " + error.message);
   } finally {
     unlockUI();
@@ -252,7 +252,7 @@ async function handlePayment() {
 
 // ---------- LEX INNOVATE PAYMENT ----------
 async function handleInnovatePayment() {
-  console.log("🚀 Innovate payment starting...");
+  console.log("Innovate payment starting...");
   const btn = innovateYes;
   const originalText = btn.innerHTML;
 
@@ -295,8 +295,8 @@ async function handleInnovatePayment() {
       handler.openIframe();
     });
 
-    console.log("✅ Innovate Paystack success:", paystackResponse.reference);
-    btn.innerHTML = "Saving Innovate...";
+    console.log("Innovate Paystack success:", paystackResponse.reference);
+    btn.innerHTML = "Processing Payment...";
 
     const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
       method: "POST",
@@ -309,7 +309,7 @@ async function handleInnovatePayment() {
     });
 
     const result = await res.json();
-    console.log("✅ Innovate backend result:", result);
+    console.log("Innovate backend result:", result);
 
     if (!result.success) {
       throw new Error(result.message || "Innovate payment failed");
@@ -318,7 +318,7 @@ async function handleInnovatePayment() {
     innovateSection.style.display = "none";
 
   } catch (error) {
-    console.error("❌ Innovate error:", error);
+    console.error("Innovate error:", error);
     alert("Failed to save Innovate payment: " + error.message);
   } finally {
     innovateYes.disabled = false;
