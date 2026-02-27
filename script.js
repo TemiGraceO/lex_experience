@@ -566,5 +566,16 @@ window.addEventListener("scroll", () => {
 backToTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
+// Close nav when tapping outside on mobile
+document.addEventListener("click", (e) => {
+  const isNavOpen = document.body.classList.contains("nav-open");
+  if (!isNavOpen) return;
 
+  const clickedInsideNav = nav.contains(e.target);
+  const clickedToggle = navToggle.contains(e.target);
+
+  if (!clickedInsideNav && !clickedToggle) {
+    document.body.classList.remove("nav-open");
+  }
+});
 console.log("✅ Lex Xperience 2026 - Production Ready!");
