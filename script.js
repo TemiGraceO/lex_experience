@@ -165,7 +165,6 @@ function verifyIDCard(file) {
 
 // ---------- MAIN PAYMENT FLOW ----------
 async function handlePayment() {
-  console.log("🚀 Main payment starting...");
 
   const btn = payBtn;
   const originalText = btn.innerHTML;
@@ -202,7 +201,6 @@ async function handlePayment() {
       handler.openIframe();
     });
 
-    console.log("✅ Main payment success:", paymentResult.reference);
 
     // 🔥 SHOW LOADER AGAIN AFTER PAYSTACK CLOSES
     registerForm.classList.add('form-processing');
@@ -228,7 +226,6 @@ async function handlePayment() {
     });
 
     const text = await response.text();
-    console.log("Backend response:", text);
 
     let result;
     try {
@@ -242,7 +239,6 @@ async function handlePayment() {
       throw new Error(result.message || "Registration failed");
     }
 
-    console.log("🎉 Registration complete!");
     showPostPayment();
 
   } catch (error) {
@@ -257,7 +253,6 @@ async function handlePayment() {
 
 // ---------- LEX INNOVATE PAYMENT ----------
 async function handleInnovatePayment() {
-  console.log("Innovate payment starting...");
   const btn = innovateYes;
   const originalText = btn.innerHTML;
 
@@ -300,7 +295,6 @@ async function handleInnovatePayment() {
       handler.openIframe();
     });
 
-    console.log("Innovate Paystack success:", paystackResponse.reference);
     btn.innerHTML = "Processing...";
 
     const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
@@ -314,7 +308,6 @@ async function handleInnovatePayment() {
     });
 
     const result = await res.json();
-    console.log("Innovate backend result:", result);
 
     if (!result.success) {
       throw new Error(result.message || "Innovate payment failed");
@@ -578,4 +571,3 @@ document.addEventListener("click", (e) => {
     document.body.classList.remove("nav-open");
   }
 });
-console.log("✅ Lex Xperience 2026 - Production Ready!");
