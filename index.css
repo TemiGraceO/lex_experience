@@ -1413,7 +1413,7 @@ input, select, textarea {
 .countdown-wrapper {
   margin-top: 2rem;
   display: inline-block;
-  
+  margin-bottom: 5%;
 }
 
 .countdown-label {
