@@ -259,7 +259,6 @@ async function handlePayment() {
 
   } catch (error) {
     console.error("❌ Main payment error:", error);
-    alert("Registration failed: " + error.message);
   } finally {
     unlockUI();
     btn.disabled = false;
@@ -453,7 +452,6 @@ if (innovateYes) {
 
 if (innovateNo) {
   innovateNo.addEventListener("click", () => {
-    alert("🎉 Registration complete! Enjoy Lex Xperience 2026!");
     innovateSection.style.display = "none";
   });
 }
