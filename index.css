@@ -1199,6 +1199,9 @@ input, select, textarea { font-size: 16px !important; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {
+  #home{
+    padding-top: 2%;
+  }
   .hero-grid,
   .about-grid,
   .section-cta-inner { grid-template-columns: minmax(0, 1fr); }
