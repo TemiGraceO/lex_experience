@@ -36,7 +36,9 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
 }
-
+.gold{
+  color: rgb(243, 220, 93);
+}
 @keyframes fadeInGlobal {
   to { opacity: 1; }
 }
