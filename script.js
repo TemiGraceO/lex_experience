@@ -445,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var d1 = await (await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=innovate")).json();
         if (d1.registered) { showStatus(innovateStatusBox, "⚠️ This email has already been registered for Lex Innovate.", "warn"); return; }
         var d2 = await (await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience")).json();
-        if (!d2.registered) { showStatus(innovateStatusBox, "❌ No Lex Xperience registration found for this email. Please register first.", "error"); return; }
+        if (!d2.registered) { showStatus(innovateStatusBox, "❌ No Lex Xperience registration found for this email. Please register for Lex Xperience first.", "error"); return; }
         showStatus(innovateStatusBox, "✅ Registration confirmed for " + name + "! You can now proceed to pay for Lex Innovate.", "success");
         if (innovatePayGroup) innovatePayGroup.style.display = "block";
       } catch(_) { showStatus(innovateStatusBox, "⚠️ Could not verify at this time. Please try again shortly.", "warn");
