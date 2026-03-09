@@ -311,6 +311,13 @@
               <small class="error-message"></small>
             </div>
 
+            <!-- School name — shown only for non-ABU students -->
+            <div class="form-group" id="schoolNameSection" style="display:none;">
+              <label for="schoolName">Name of your School / Institution<span>*</span></label>
+              <input type="text" id="schoolName" name="schoolName" autocomplete="organization" placeholder="e.g. Ahmadu Bello University" />
+              <small class="error-message" id="schoolNameError"></small>
+            </div>
+
             <!-- ABU ID Upload — shown only when "yes" selected -->
             <div class="form-group fade-in" id="regSection" style="display:none;">
               <label for="regNumber">Upload your ABU ID Card or Admission Letter<span>*</span></label>
@@ -350,7 +357,7 @@
 
             <div class="form-group" id="paymentSection" style="display:none;">
               <p id="paymentText" style="margin-bottom: 0.6rem; font-size: 0.9rem; color: var(--accent-gold-soft);"></p>
-              <button type="button" class="btn btn-primary btn-block" id="payBtn" disabled>
+              <button type="button" class="btn btn-primary btn-block" id="payBtn" style="opacity:0.6;cursor:not-allowed;" aria-disabled="true">
                 Proceed to Payment
               </button>
               <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
@@ -359,7 +366,7 @@
           </div><!-- /#formFields -->
 
           <div class="post-payment" id="paymentThanks" style="display: none;">
-            Thank you for registering! Your details have been confirmed. You will receive a confirmation email shortly.
+            🎉 Thank you for registering! Your details have been confirmed. You will receive a confirmation email shortly.
             <div id="innovateSection" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px;">
               <h4><a href="#innovatey" style="text-decoration: none; color: white;">Add Lex Innovate Pitch</a></h4>
               <p style="margin: 0.4rem 0 0.75rem; font-size: 0.9rem; color: var(--text-muted);">Upgrade your experience with Lex Innovate (₦12,000)</p>
@@ -449,7 +456,7 @@
       <div class="fade-slide-right">
         <h4 class="footer-heading">Contact</h4>
         <ul class="footer-list">
-          <li><a href="mailto:lexxperience01@gmail.com">lexxperience01@gmail.com</a></li>
+          <li><a href="/cdn-cgi/l/email-protection#036f667b7b7366716a666d6066333243646e626a6f2d606c6e"><span class="__cf_email__" data-cfemail="761a130e0e0613041f13181513464736111b171f1a5815191b">[email&#160;protected]</span></a></li>
           <li><a href="https://www.instagram.com/lex_.experience?igsh=YXdqbnBudnlkNzFh&utm_source=qr" target="_blank">Instagram</a></li>
         </ul>
       </div>
