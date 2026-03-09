@@ -284,7 +284,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                 <tr>
                   <td style="background:rgba(247,222,80,0.06);border:1px solid rgba(247,222,80,0.25);border-radius:12px;padding:20px 24px;">
-                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">⏳ What happens next?</p>
+                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">What happens next?</p>
                     <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.7;">
                       Our team will manually verify your ABU ID card. Once verified, you will receive a <strong style="color:#f2e7a2;">separate confirmation email</strong> with your full ticket details. Please ensure the ID you uploaded is clear and legible to avoid delays.
                     </p>
@@ -296,7 +296,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                 <tr>
                   <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
-                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">📅 Event Details</p>
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
@@ -347,7 +347,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
           // ✅ NON-ABU STUDENTS — Full ticket confirmation email
           await sendLexEmail({
             to: normalizedEmail,
-            subject: "🎟️ Lex Xperience 2026 — Your Ticket is Confirmed!",
+            subject: "Lex Xperience 2026 — Your Ticket is Confirmed!",
             html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -418,7 +418,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
                   <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
-                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">📅 Event Details</p>
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
@@ -586,7 +586,7 @@ app.post("/innovate-pay", async (req, res) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
                   <td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
-                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Registration</p>
+                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Your Registration</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td>

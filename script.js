@@ -518,7 +518,7 @@ document.addEventListener("DOMContentLoaded", function () {
   checkFormValidity();
 
   // ---------- COUNTDOWN ----------
-  var eventDate = new Date("2026-03-31T00:00:00").getTime();
+  var eventDate = new Date("2026-03-31T00:00:00+01:00").getTime();
   function updateCountdown() {
     var distance = eventDate - Date.now();
     if (distance <= 0) { var el = document.querySelector(".countdown"); if (el) el.innerHTML = '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>'; return; }
