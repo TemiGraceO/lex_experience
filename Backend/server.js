@@ -11,6 +11,12 @@ const { Resend } = require("resend");
 
 const app = express();
 
+// ✅ CHECK REQUIRED ENV VARS ON STARTUP
+const requiredEnv = ['MONGODB_URI', 'RESEND_API_KEY', 'PAYSTACK_SECRET_KEY', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+requiredEnv.forEach((key) => {
+  if (!process.env[key]) console.warn(`⚠️  Missing env var: ${key}`);
+});
+
 // ✅ RESEND EMAIL
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -64,6 +70,7 @@ const registrationSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   school: String,
   registrationPayment: { reference: String, amount: Number },
+  schoolName: String,
   interest: String,
   file: String,
   fileUrl: String,
@@ -114,13 +121,71 @@ app.get("/check-email", async (req, res) => {
   }
 });
 
+// ✅ VERIFY PAYMENT WITH PAYSTACK (called before saving registration)
+app.post("/verify-payment", async (req, res) => {
+  try {
+    const { reference, expectedAmount } = req.body;
+
+    if (!reference || !expectedAmount) {
+      return res.status(400).json({ success: false, message: "Missing reference or expected amount" });
+    }
+
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!data.status || data.data.status !== 'success') {
+      return res.status(400).json({ success: false, message: "Payment was not successful." });
+    }
+
+    // Paystack returns amount in kobo — convert to naira
+    const paidAmountNaira = data.data.amount / 100;
+
+    if (paidAmountNaira < Number(expectedAmount)) {
+      console.warn(`⚠️ Amount mismatch on verify: paid ₦${paidAmountNaira}, expected ₦${expectedAmount}`);
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect payment amount. Expected ₦${Number(expectedAmount).toLocaleString()} but received ₦${paidAmountNaira.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
+      });
+    }
+
+    return res.json({ success: true, amount: paidAmountNaira });
+
+  } catch (err) {
+    console.error("❌ verify-payment error:", err);
+    return res.status(500).json({ success: false, message: "Payment verification failed." });
+  }
+});
+
 // 🔥 MAIN REGISTRATION ROUTE
 app.post("/register", upload.single("regNumber"), async (req, res) => {
   try {
-    const { name, email, school, paymentReference, amount, interest } = req.body;
+    const { name, email, school, schoolName, paymentReference, amount, interest } = req.body;
 
     if (!name || !email || !school || !paymentReference) {
       return res.status(400).json({ success: false, message: "Missing registration data" });
+    }
+
+    // ✅ SCHOOL NAME VALIDATION for non-ABU students
+    if (school === 'no' && (!schoolName || !schoolName.trim())) {
+      return res.status(400).json({ success: false, message: "School name is required for non-ABU students." });
+    }
+
+    // ✅ AMOUNT VALIDATION — check paid amount matches expected
+    const paidAmount   = Number(amount || 0);
+    const expectedAmount = school === 'yes' ? 5000 : 12000;
+
+    if (paidAmount < expectedAmount) {
+      console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect payment amount. Expected ₦${expectedAmount.toLocaleString()} but received ₦${paidAmount.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
+      });
     }
 
     // Check for duplicate before saving
@@ -137,6 +202,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
       name: name.trim(),
       email: normalizedEmail,
       school,
+      schoolName: school === 'no' ? (schoolName || '').trim() : '',
       interest: interest || "",
       registrationPayment: {
         reference: paymentReference,
@@ -166,45 +232,250 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
           console.log("✅ Cloudinary done:", result.secure_url);
         }
 
-        // Confirmation email
-        await sendLexEmail({
-          to: normalizedEmail,
-          subject: "✅ Lex Xperience 2026 Registration Confirmed!",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #b99a2d;">Welcome to Lex Xperience 2026, ${registrationData.name}!</h2>
-              <p>Your registration is <strong>confirmed</strong>. Here are your details:</p>
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        // ✅ ABU STUDENTS — Acknowledgement only (ID needs manual verification)
+        if (registrationData.school === 'yes') {
+          await sendLexEmail({
+            to: normalizedEmail,
+            subject: "Lex Xperience 2026 — Registration Received",
+            html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+              <div style="display:inline-block;">
+                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+
+              <!-- STATUS BADGE -->
+              <div style="text-align:center;margin-bottom:28px;">
+                <span style="display:inline-block;background:rgba(247,222,80,0.12);border:1px solid rgba(247,222,80,0.35);color:#f7de50;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">
+                  Registration Received
+                </span>
+              </div>
+
+              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
+                Hi ${registrationData.name},
+              </h1>
+              <p style="margin:0 0 20px;font-size:15px;color:#9ca3af;line-height:1.7;">
+                Thank you for registering for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span>. We've received your details and your ABU ID card is currently under review.
+              </p>
+
+              <!-- NOTICE BOX -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                 <tr>
-                  <td style="padding: 8px; border: 1px solid #ddd;"><strong>Ticket Type</strong></td>
-                  <td style="padding: 8px; border: 1px solid #ddd;">
-                    ${registrationData.school === 'yes' ? 'ABU Student (₦5,000)' : 'General (₦12,000)'}
+                  <td style="background:rgba(247,222,80,0.06);border:1px solid rgba(247,222,80,0.25);border-radius:12px;padding:20px 24px;">
+                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">⏳ What happens next?</p>
+                    <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.7;">
+                      Our team will manually verify your ABU ID card. Once verified, you will receive a <strong style="color:#f2e7a2;">separate confirmation email</strong> with your full ticket details. Please ensure the ID you uploaded is clear and legible to avoid delays.
+                    </p>
                   </td>
                 </tr>
+              </table>
+
+              <!-- EVENT DETAILS -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                 <tr>
-                  <td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Ref</strong></td>
-                  <td style="padding: 8px; border: 1px solid #ddd;">${registrationData.registrationPayment.reference}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount</strong></td>
-                  <td style="padding: 8px; border: 1px solid #ddd;">₦${registrationData.registrationPayment.amount}</td>
+                  <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">📅 Event Details</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                      </tr>
+                    </table>
+                  </td>
                 </tr>
               </table>
-              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3>📅 Event Details</h3>
-                <p><strong>Date:</strong> March 31st – April 4th, 2026</p>
-                <p><strong>Venue:</strong> Faculty of Law, ABU Zaria</p>
-                <p>Bring this confirmation (printed or digital) to registration on the day.</p>
-              </div>
-              <p>Full programme schedule and logistics coming soon. Stay tuned!</p>
-              <hr style="margin: 30px 0;">
-              <p style="color: #666; font-size: 12px; text-align: center;">
-                Lex Xperience 2026 | Law • Innovation • Northern Nigeria<br>
-                <a href="mailto:lexxperience01@gmail.com" style="color: #b99a2d;">lexxperience01@gmail.com</a>
+
+              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
+                If you have any questions, reply to this email or reach us at
+                <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
               </p>
-            </div>
-          `,
-        });
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;">
+                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+            `,
+          });
+
+        } else {
+          // ✅ NON-ABU STUDENTS — Full ticket confirmation email
+          await sendLexEmail({
+            to: normalizedEmail,
+            subject: "🎟️ Lex Xperience 2026 — Your Ticket is Confirmed!",
+            html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+              <div style="display:inline-block;">
+                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+
+              <!-- STATUS BADGE -->
+              <div style="text-align:center;margin-bottom:28px;">
+                <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">
+                  ✓ Ticket Confirmed
+                </span>
+              </div>
+
+              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
+                You're in, ${registrationData.name}! 🎉
+              </h1>
+              <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
+                Your registration for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span> is confirmed. We can't wait to see you there!
+              </p>
+
+              <!-- TICKET CARD -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Ticket</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Ticket Type</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">General Admission</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${registrationData.registrationPayment.amount}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td>
+                        <td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${registrationData.registrationPayment.reference}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- EVENT DETAILS -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">📅 Event Details</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- IMPORTANT NOTE -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
+                    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
+                      <strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day. Full programme schedule and logistics coming soon!
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
+                Questions? Reach us at
+                <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;">
+                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+            `,
+          });
+        }
       } catch (bgErr) {
         console.error("Background task failed:", bgErr);
       }
@@ -267,32 +538,132 @@ app.post("/innovate-pay", async (req, res) => {
     setImmediate(() => {
       sendLexEmail({
         to: normalizedEmail,
-        subject: "Lex Innovate Pitch Registration Confirmed!",
+        subject: "Lex Innovate Pitch 2026 — You're In!",
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #059669;">Lex Innovate Pitch — You're In!</h2>
-            <p>Your Lex Innovate registration is confirmed:</p>
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Reference</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${reference}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;">₦${Number(amount || 0)}</td>
-              </tr>
-            </table>
-            <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3>Next Steps</h3>
-              <p>Present this confirmation at <strong>Day 4 (Lex Innovate Pitch)</strong>.</p>
-              <p>Prepare your pitch deck and solution overview. Good luck — we're excited to see your innovation!</p>
-            </div>
-            <hr style="margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              Lex Xperience 2026 | Law • Innovation • Northern Nigeria<br>
-              <a href="mailto:lexxperience01@gmail.com" style="color: #b99a2d;">lexxperience01@gmail.com</a>
-            </p>
-          </div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Innovate 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+              <div style="display:inline-block;">
+                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+
+              <!-- STATUS BADGE -->
+              <div style="text-align:center;margin-bottom:28px;">
+                <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">
+                  ✓ Innovate Pitch Confirmed
+                </span>
+              </div>
+
+              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
+                You're a Pitcher, ${doc.name || 'Innovator'}! 🚀
+              </h1>
+              <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
+                Your registration for the <span style="color:#f2e7a2;font-weight:600;">Lex Innovate Pitch</span> is confirmed. Get ready to present your big idea to industry leaders, investors, and policy stakeholders.
+              </p>
+
+              <!-- TICKET CARD -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Registration</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate Pitch — Day 4</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${Number(amount || 0)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td>
+                        <td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${reference}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- NEXT STEPS -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🚀 Next Steps</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Day 4 — Lex Innovate</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- TIP BOX -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
+                    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
+                      <strong style="color:#f2e7a2;">Tip:</strong> Prepare your pitch deck and a clear summary of your solution. Present this confirmation at the Innovate Pitch registration desk on the day.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
+                Questions? Reach us at
+                <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- GOLD DIVIDER -->
+          <tr>
+            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;">
+                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
         `,
       });
     });
@@ -309,5 +680,5 @@ app.post("/innovate-pay", async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
