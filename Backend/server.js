@@ -178,7 +178,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
 
     // ✅ AMOUNT VALIDATION — check paid amount matches expected
     const paidAmount   = Number(amount || 0);
-    const expectedAmount = school === 'yes' ? 5000 : 12000;
+    const expectedAmount = school === 'yes' ? 5000 : 20000;
 
     if (paidAmount < expectedAmount) {
       console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
@@ -385,7 +385,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
               </div>
 
               <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
-                You're in, ${registrationData.name}! 🎉
+                You're in, ${registrationData.name}! 
               </h1>
               <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
                 Your registration for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span> is confirmed. We can't wait to see you there!
@@ -576,7 +576,7 @@ app.post("/innovate-pay", async (req, res) => {
               </div>
 
               <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
-                You're a Pitcher, ${doc.name || 'Innovator'}! 🚀
+                You're a Pitcher, ${doc.name || 'Innovator'}! 
               </h1>
               <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
                 Your registration for the <span style="color:#f2e7a2;font-weight:600;">Lex Innovate Pitch</span> is confirmed. Get ready to present your big idea to industry leaders, investors, and policy stakeholders.
@@ -609,7 +609,7 @@ app.post("/innovate-pay", async (req, res) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
                   <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
-                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🚀 Next Steps</p>
+                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Next Steps</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td>
