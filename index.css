@@ -38,6 +38,8 @@ body {
 }
 .gold{
   color: rgb(243, 220, 93);
+  display: inline-block;
+  min-width: 10ch;
 }
 @keyframes fadeInGlobal {
   to { opacity: 1; }
