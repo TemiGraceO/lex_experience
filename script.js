@@ -339,7 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       var paymentResult = await new Promise(function(resolve, reject) {
         var handler = PaystackPop.setup({
-          key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
+          key: "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba",
           email: email, amount: baseAmount * 100, currency: "NGN",
           callback: function(r){ resolve(r); },
           onClose:  function(){ reject(new Error("Payment cancelled")); }
@@ -404,7 +404,7 @@ document.addEventListener("DOMContentLoaded", function () {
         yesBtn.innerHTML = "Processing...";
         try {
           var pr = await new Promise(function(resolve, reject) {
-            var h = PaystackPop.setup({ key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a", email: email, amount: 12000 * 100, currency: "NGN", callback: function(r){ resolve(r); }, onClose: function(){ reject(new Error("Payment cancelled")); } });
+            var h = PaystackPop.setup({ key: "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba", email: email, amount: 12000 * 100, currency: "NGN", callback: function(r){ resolve(r); }, onClose: function(){ reject(new Error("Payment cancelled")); } });
             h.openIframe();
           });
           var res = await fetch(BACKEND_URL + "/innovate-pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email, reference: pr.reference, amount: 12000 }) });
@@ -452,7 +452,7 @@ document.addEventListener("DOMContentLoaded", function () {
       innovateOnlyPayBtn.disabled = true; innovateOnlyPayBtn.innerHTML = "Opening payment...";
       try {
         var pr = await new Promise(function(resolve, reject) {
-          var h = PaystackPop.setup({ key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a", email: email, amount: 12000 * 100, currency: "NGN", callback: function(r){ resolve(r); }, onClose: function(){ reject(new Error("Payment cancelled")); } });
+          var h = PaystackPop.setup({ key: "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba", email: email, amount: 12000 * 100, currency: "NGN", callback: function(r){ resolve(r); }, onClose: function(){ reject(new Error("Payment cancelled")); } });
           h.openIframe();
         });
         lockForm(innovateOnlyForm, "Saving your Innovate registration..."); innovateOnlyPayBtn.innerHTML = "Processing...";

@@ -299,7 +299,7 @@ body {
 /* ============ HERO ============ */
 .hero {
   position: relative;
-  padding: 4.5rem 0 5rem;
+  padding: 3rem 0 4rem;
   color: var(--text-main);
   overflow: hidden;
 }
@@ -1073,9 +1073,9 @@ input, select, textarea { font-size: 16px !important; }
 
 /* ============ COUNTDOWN ============ */
 .countdown-wrapper {
-  margin-top: 2rem;
+  margin-top: 1rem;
   display: inline-block;
-  margin-bottom: 5%;
+  margin-bottom: 2%;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 0.8s ease-out 0.9s forwards;
@@ -1200,7 +1200,7 @@ input, select, textarea { font-size: 16px !important; }
   .hero-grid,
   .about-grid,
   .section-cta-inner { grid-template-columns: minmax(0, 1fr); }
-  .hero              { padding-top: 6rem; }
+  .hero              { padding-top: 3.5rem; }
   .hero-art          { justify-content: center; }
   .about-cards       { grid-template-columns: minmax(0, 1fr); }
   .footer-grid       { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1238,7 +1238,7 @@ input, select, textarea { font-size: 16px !important; }
   .nav-link::after,
   .nav-link::before      { display: none; }
   .nav-cta               { align-self: flex-start; margin-top: 0.3rem; }
-  .hero-content          { padding-top: 1.5rem; }
+  .hero-content          { padding-top: 0.5rem; }
   .hero-grid             { gap: 2rem; }
   .hero-meta             { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 1rem; max-width: 100%; }
   .hero-art              { margin-top: 1.5rem; }
