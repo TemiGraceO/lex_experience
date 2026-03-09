@@ -4,125 +4,121 @@ console.error = (...args) => {
   if (typeof args[0] === 'string' && (
     args[0].includes('Cannot destructure property') ||
     args[0].includes('language')
-  )) {
-    return;
-  }
+  )) return;
   originalError.apply(console, args);
 };
 window.addEventListener('error', (e) => {
   if (e.message && e.message.includes('Cannot destructure property')) {
-    e.preventDefault();
-    e.stopPropagation();
-    return true;
+    e.preventDefault(); e.stopPropagation(); return true;
   }
 }, true);
-
 window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason && e.reason.message && e.reason.message.includes('Cannot destructure property')) {
-    e.preventDefault();
-  }
+  if (e.reason && e.reason.message && e.reason.message.includes('Cannot destructure property')) e.preventDefault();
 });
 
 // ---------- DOM ELEMENTS ----------
-const navToggle = document.getElementById("navToggle");
-const paymentThanks = document.getElementById("paymentThanks");
+const navToggle       = document.getElementById("navToggle");
+const nav             = document.getElementById("nav");
+const navLinks        = document.querySelectorAll(".nav-link");
+const sections        = document.querySelectorAll("section[id]");
+const registerForm    = document.getElementById("registerForm");
+const innovateOnlyForm = document.getElementById("innovateOnlyForm");
+const schoolSelectEl  = document.getElementById("school");
+const paymentSection  = document.getElementById("paymentSection");
+const paymentText     = document.getElementById("paymentText");
+const payBtn          = document.getElementById("payBtn");
+const regSection      = document.getElementById("regSection");
+const regNumberInput  = document.getElementById("regNumber");
+const verifyStatus    = document.getElementById("verifyStatus");
+const idError         = document.getElementById("idError");
+const idPreview       = document.getElementById("idPreview");
+const idPreviewImage  = document.getElementById("idPreviewImage");
+const idFileName      = document.getElementById("idFileName");
+const idFileType      = document.getElementById("idFileType");
+const innovateYes     = document.getElementById("innovateYes");
+const innovateNo      = document.getElementById("innovateNo");
+const formFields      = document.getElementById("formFields");
+const paymentThanks   = document.getElementById("paymentThanks");
 const innovateSection = document.getElementById("innovateSection");
-const nav = document.getElementById("nav");
-const navLinks = document.querySelectorAll(".nav-link");
-const sections = document.querySelectorAll("section[id]");
-const registerForm = document.getElementById("registerForm");
-const schoolSelectEl = document.getElementById("school");
-const paymentSection = document.getElementById("paymentSection");
-const paymentText = document.getElementById("paymentText");
-const payBtn = document.getElementById("payBtn");
-const regSection = document.getElementById("regSection");
-const regNumberInput = document.getElementById("regNumber");
-const verifyStatus = document.getElementById("verifyStatus");
-const idError = document.getElementById("idError");
-const idPreview = document.getElementById("idPreview");
-const idPreviewImage = document.getElementById("idPreviewImage");
-const idFileName = document.getElementById("idFileName");
-const idFileType = document.getElementById("idFileType");
-const innovateYes = document.getElementById("innovateYes");
-const innovateNo = document.getElementById("innovateNo");
-const formFields = document.getElementById("formFields");
-const loadingOverlay = document.getElementById("loadingOverlay");
-const loadingText = document.getElementById("loadingText");
+
+// Form B elements
+const innovateVerifyBtn   = document.getElementById("innovateVerifyBtn");
+const innovateOnlyPayBtn  = document.getElementById("innovateOnlyPayBtn");
+const innovateStatusBox   = document.getElementById("innovateStatusBox");
+const innovatePayGroup    = document.getElementById("innovatePayGroup");
+const innovateOnlyThanks  = document.getElementById("innovateOnlyThanks");
+const innovateOnlyFields  = document.getElementById("innovateOnlyFields");
 
 // ---------- STATE ----------
-let baseAmount = 0;
-let abuVerified = false;
-let uploadedFile = null;
+let baseAmount    = 0;
+let abuVerified   = false;
+let uploadedFile  = null;
 let verifyTimeout;
 const MOCK_VERIFICATION_MODE = true;
 const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
 
 // Prevent native form submit
-registerForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+registerForm.addEventListener("submit", (e) => { e.preventDefault(); e.stopPropagation(); });
+innovateOnlyForm.addEventListener("submit", (e) => { e.preventDefault(); e.stopPropagation(); });
+
+// ---------- REGISTRATION TYPE TOGGLE ----------
+document.querySelectorAll('input[name="regType"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    const val = radio.value;
+    if (val === "new") {
+      registerForm.style.display = "block";
+      innovateOnlyForm.style.display = "none";
+    } else {
+      registerForm.style.display = "none";
+      innovateOnlyForm.style.display = "block";
+      // Reset Form B state
+      innovateStatusBox.style.display = "none";
+      innovateStatusBox.className = "form-status-box";
+      innovatePayGroup.style.display = "none";
+      document.getElementById("innovateOnlyFields").style.display = "block";
+      innovateOnlyThanks.style.display = "none";
+    }
+  });
 });
 
-// ---------- FORM VALIDATION ----------
+// ---------- FORM VALIDATION (Form A) ----------
 function checkFormValidity() {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const name   = document.getElementById("name").value.trim();
+  const email  = document.getElementById("email").value.trim();
   const school = schoolSelectEl.value;
-  const hasFile = uploadedFile !== null;
-
-  let isValid = !!(name && email && school);
-
-  if (school === "yes") {
-    isValid = isValid && hasFile && abuVerified;
-  }
-
+  let isValid  = !!(name && email && school);
+  if (school === "yes") isValid = isValid && uploadedFile !== null && abuVerified;
   payBtn.disabled = !isValid;
   payBtn.style.opacity = isValid ? "1" : "0.6";
-  payBtn.style.cursor = isValid ? "pointer" : "not-allowed";
+  payBtn.style.cursor  = isValid ? "pointer" : "not-allowed";
 }
 
-// ---------- TYPEWRITER EFFECT ----------
-const typewriterEl = document.getElementById("typewriter");
+// ---------- TYPEWRITER ----------
+const typewriterEl    = document.getElementById("typewriter");
 const typewriterWords = ["Architects", "Pioneers", "Builders", "Visionaries"];
-let wordIndex = 0;
-let charIndex = 0;
-let isDeleting = false;
+let wordIndex = 0, charIndex = 0, isDeleting = false;
 
 function typeWrite() {
   const currentWord = typewriterWords[wordIndex];
-
-  if (isDeleting) {
-    typewriterEl.textContent = currentWord.substring(0, charIndex - 1);
-    charIndex--;
-  } else {
-    typewriterEl.textContent = currentWord.substring(0, charIndex + 1);
-    charIndex++;
-  }
-
+  typewriterEl.textContent = isDeleting
+    ? currentWord.substring(0, charIndex - 1)
+    : currentWord.substring(0, charIndex + 1);
+  isDeleting ? charIndex-- : charIndex++;
   if (!isDeleting && charIndex === currentWord.length) {
-    setTimeout(() => { isDeleting = true; typeWrite(); }, 1800);
-    return;
+    setTimeout(() => { isDeleting = true; typeWrite(); }, 1800); return;
   }
-
   if (isDeleting && charIndex === 0) {
     isDeleting = false;
     wordIndex = (wordIndex + 1) % typewriterWords.length;
   }
-
   setTimeout(typeWrite, isDeleting ? 60 : 100);
 }
-
 typeWrite();
 
 // ---------- UI HELPERS ----------
 function showPostPayment() {
   const formTop = registerForm.getBoundingClientRect().top + window.scrollY - 100;
-
-  window.scrollTo({
-    top: formTop,
-    behavior: "smooth"
-  });
-
+  window.scrollTo({ top: formTop, behavior: "smooth" });
   setTimeout(() => {
     formFields.style.display = "none";
     paymentThanks.style.display = "block";
@@ -130,34 +126,21 @@ function showPostPayment() {
   }, 400);
 }
 
-function lockUI(text = "Processing...") {
-  document.body.classList.add('locked');
-  registerForm.classList.add('locked');
-  registerForm.classList.add('form-processing');
-
-  const loaderMsg = document.getElementById('loaderMessage');
-  if (loaderMsg) loaderMsg.textContent = text;
-
-  if (loadingOverlay) {
-    loadingOverlay.classList.add('active');
-    if (loadingText) loadingText.textContent = text;
-  }
+function lockForm(form, text = "Processing...") {
+  form.classList.add("form-processing");
+  const msg = form.querySelector("[id$='loaderMessage']");
+  if (msg) msg.textContent = text;
 }
 
-function unlockUI() {
-  document.body.classList.remove('locked');
-  registerForm.classList.remove('locked');
-  registerForm.classList.remove('form-processing');
-  if (loadingOverlay) loadingOverlay.classList.remove('active');
+function unlockForm(form) {
+  form.classList.remove("form-processing");
 }
 
 function showVerificationSuccess(message) {
   clearTimeout(verifyTimeout);
   verifyStatus.textContent = message;
   verifyStatus.style.color = "#22c55e";
-  verifyTimeout = setTimeout(() => {
-    verifyStatus.textContent = "";
-  }, 8000);
+  verifyTimeout = setTimeout(() => { verifyStatus.textContent = ""; }, 8000);
 }
 
 function resetPreview() {
@@ -167,6 +150,37 @@ function resetPreview() {
   idFileType.textContent = "";
   idError.textContent = "";
 }
+
+function showStatus(el, message, type) {
+  // type: 'error' | 'success' | 'warn'
+  el.style.display = "block";
+  el.className = `form-status-box status-${type}`;
+  el.textContent = message;
+}
+
+// ---------- DUPLICATE EMAIL CHECK (Form A) ----------
+let emailCheckTimeout;
+document.getElementById("email").addEventListener("input", () => {
+  checkFormValidity();
+  clearTimeout(emailCheckTimeout);
+  const email = document.getElementById("email").value.trim();
+  const errorEl = document.getElementById("emailError");
+  if (!email || !email.includes("@")) { errorEl.textContent = ""; return; }
+  emailCheckTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/check-email?email=${encodeURIComponent(email)}&type=xperience`);
+      const data = await res.json();
+      if (data.registered) {
+        errorEl.textContent = "⚠️ This email is already registered for Lex Xperience. Please use a different email.";
+        payBtn.disabled = true;
+        payBtn.style.opacity = "0.6";
+      } else {
+        errorEl.textContent = "";
+        checkFormValidity();
+      }
+    } catch (_) { /* silently fail — don't block user if backend is slow */ }
+  }, 800);
+});
 
 // ---------- MOCK ID VERIFICATION ----------
 function verifyIDCard(file) {
@@ -179,49 +193,49 @@ function verifyIDCard(file) {
   }
 }
 
-// ---------- MAIN PAYMENT FLOW ----------
+// ---------- MAIN PAYMENT FLOW (Form A) ----------
 async function handlePayment() {
-
   const btn = payBtn;
   const originalText = btn.innerHTML;
   btn.disabled = true;
-
-  lockUI("Processing payment...");
+  lockForm(registerForm, "Processing payment...");
 
   try {
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const school = schoolSelectEl.value;
+    const name     = document.getElementById("name").value.trim();
+    const email    = document.getElementById("email").value.trim();
+    const school   = schoolSelectEl.value;
     const interest = document.getElementById("interest").value || "";
 
-    if (!name || !email || !school) {
-      throw new Error("Please fill name, email, and select school type");
-    }
+    if (!name || !email || !school) throw new Error("Please fill name, email, and select school type");
+    if (school === "yes" && !abuVerified) throw new Error("Please verify your ABU ID first");
 
-    if (school === "yes" && !abuVerified) {
-      throw new Error("Please verify your ABU ID first");
-    }
+    // Check duplicate before opening Paystack
+    try {
+      const dupRes = await fetch(`${BACKEND_URL}/check-email?email=${encodeURIComponent(email)}&type=xperience`);
+      const dupData = await dupRes.json();
+      if (dupData.registered) {
+        document.getElementById("emailError").textContent = "⚠️ This email is already registered. Please use a different email.";
+        unlockForm(registerForm);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        return;
+      }
+    } catch (_) {}
 
-    // 🔥 HIDE LOADER BEFORE PAYSTACK OPENS
-    registerForm.classList.remove('form-processing');
+    registerForm.classList.remove("form-processing");
 
     const paymentResult = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
         key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
-        email,
-        amount: baseAmount * 100,
-        currency: "NGN",
+        email, amount: baseAmount * 100, currency: "NGN",
         callback: (response) => resolve(response),
         onClose: () => reject(new Error("Payment cancelled")),
       });
       handler.openIframe();
     });
 
-
-    // 🔥 SHOW LOADER AGAIN AFTER PAYSTACK CLOSES
-    registerForm.classList.add('form-processing');
-    const loaderMsg = document.getElementById('loaderMessage');
-    if (loaderMsg) loaderMsg.textContent = "Processing...";
+    registerForm.classList.add("form-processing");
+    document.getElementById("loaderMessage").textContent = "Saving your registration...";
     btn.innerHTML = "Processing registration...";
 
     const formData = new FormData();
@@ -231,79 +245,41 @@ async function handlePayment() {
     formData.append("interest", interest);
     formData.append("paymentReference", paymentResult.reference);
     formData.append("amount", String(baseAmount));
+    if (school === "yes" && uploadedFile) formData.append("regNumber", uploadedFile);
 
-    if (school === "yes" && uploadedFile) {
-      formData.append("regNumber", uploadedFile);
-    }
-
-    const response = await fetch(`${BACKEND_URL}/register`, {
-      method: "POST",
-      body: formData,
-    });
-
+    const response = await fetch(`${BACKEND_URL}/register`, { method: "POST", body: formData });
     const text = await response.text();
-
     let result;
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      console.error("Invalid JSON from backend:", text);
-      throw new Error("Server returned invalid response");
-    }
-
-    if (!result.success) {
-      throw new Error(result.message || "Registration failed");
-    }
+    try { result = JSON.parse(text); } catch (e) { throw new Error("Server returned invalid response"); }
+    if (!result.success) throw new Error(result.message || "Registration failed");
 
     showPostPayment();
 
   } catch (error) {
-    console.error("❌ Main payment error:", error);
+    console.error("❌ Payment error:", error);
+    if (error.message !== "Payment cancelled") {
+      alert("Something went wrong: " + error.message);
+    }
   } finally {
-    unlockUI();
+    unlockForm(registerForm);
     btn.disabled = false;
     btn.innerHTML = originalText;
   }
 }
 
-// ---------- LEX INNOVATE PAYMENT ----------
+// ---------- LEX INNOVATE PAYMENT (from Form A post-payment) ----------
 async function handleInnovatePayment() {
   const btn = innovateYes;
   const originalText = btn.innerHTML;
-
-  innovateYes.disabled = true;
-  innovateNo.disabled = true;
-  innovateYes.style.pointerEvents = "none";
-  innovateNo.style.pointerEvents = "none";
-  innovateYes.style.opacity = "0.45";
-  innovateNo.style.opacity = "0.45";
-  innovateYes.style.cursor = "not-allowed";
-  innovateNo.style.cursor = "not-allowed";
-
+  [innovateYes, innovateNo].forEach(b => { b.disabled = true; b.style.opacity = "0.45"; });
   btn.innerHTML = "Processing...";
-
   const email = document.getElementById("email").value.trim();
-  if (!email) {
-    alert("Please enter your email first");
-    innovateYes.disabled = false;
-    innovateNo.disabled = false;
-    innovateYes.style.pointerEvents = "";
-    innovateNo.style.pointerEvents = "";
-    innovateYes.style.opacity = "";
-    innovateNo.style.opacity = "";
-    innovateYes.style.cursor = "";
-    innovateNo.style.cursor = "";
-    btn.innerHTML = originalText;
-    return;
-  }
 
   try {
     const paystackResponse = await new Promise((resolve, reject) => {
       const handler = PaystackPop.setup({
         key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
-        email,
-        amount: 12000 * 100,
-        currency: "NGN",
+        email, amount: 12000 * 100, currency: "NGN",
         callback: (response) => resolve(response),
         onClose: () => reject(new Error("Payment cancelled")),
       });
@@ -311,109 +287,155 @@ async function handleInnovatePayment() {
     });
 
     btn.innerHTML = "Processing...";
-
     const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        reference: paystackResponse.reference,
-        amount: 12000,
-      }),
+      body: JSON.stringify({ email, reference: paystackResponse.reference, amount: 12000 }),
     });
-
     const result = await res.json();
-
-    if (!result.success) {
-      throw new Error(result.message || "Innovate payment failed");
-    }
-
+    if (!result.success) throw new Error(result.message || "Innovate payment failed");
     innovateSection.style.display = "none";
 
   } catch (error) {
     console.error("Innovate error:", error);
-    alert("Failed to save Innovate payment: " + error.message);
+    if (error.message !== "Payment cancelled") alert("Failed: " + error.message);
   } finally {
-    innovateYes.disabled = false;
-    innovateNo.disabled = false;
-    innovateYes.style.pointerEvents = "";
-    innovateNo.style.pointerEvents = "";
-    innovateYes.style.opacity = "";
-    innovateNo.style.opacity = "";
-    innovateYes.style.cursor = "";
-    innovateNo.style.cursor = "";
+    [innovateYes, innovateNo].forEach(b => { b.disabled = false; b.style.opacity = ""; });
     btn.innerHTML = originalText;
   }
 }
 
-// ---------- EVENT LISTENERS ----------
+// ---------- FORM B: VERIFY & PAY INNOVATE ----------
+innovateVerifyBtn.addEventListener("click", async () => {
+  const name  = document.getElementById("innovateName").value.trim();
+  const email = document.getElementById("innovateEmail").value.trim();
+  const errorEl = document.getElementById("innovateEmailError");
 
-// File upload (ABU ID only)
+  errorEl.textContent = "";
+  innovateStatusBox.style.display = "none";
+  innovatePayGroup.style.display = "none";
+
+  if (!name || !email) {
+    showStatus(innovateStatusBox, "Please enter both your full name and email address.", "error");
+    return;
+  }
+
+  if (!email.includes("@")) {
+    errorEl.textContent = "Please enter a valid email address.";
+    return;
+  }
+
+  lockForm(innovateOnlyForm, "Verifying your registration...");
+  innovateVerifyBtn.disabled = true;
+
+  try {
+    // Check if already paid for Innovate
+    const dupRes = await fetch(`${BACKEND_URL}/check-email?email=${encodeURIComponent(email)}&type=innovate`);
+    const dupData = await dupRes.json();
+    if (dupData.registered) {
+      showStatus(innovateStatusBox, "⚠️ This email has already been registered for Lex Innovate. Please use a different email or contact us.", "warn");
+      return;
+    }
+
+    // Check if they've paid for Lex Xperience
+    const res = await fetch(`${BACKEND_URL}/check-email?email=${encodeURIComponent(email)}&type=xperience`);
+    const data = await res.json();
+
+    if (!data.registered) {
+      showStatus(innovateStatusBox, "❌ We couldn't find a Lex Xperience registration for this email. Please register for Lex Xperience first, or check that you entered the correct email.", "error");
+      return;
+    }
+
+    // All good — show pay button
+    showStatus(innovateStatusBox, `✅ Registration confirmed for ${name}! You can now proceed to pay for Lex Innovate.`, "success");
+    innovatePayGroup.style.display = "block";
+
+  } catch (err) {
+    showStatus(innovateStatusBox, "⚠️ Could not verify at this time. Please try again shortly.", "warn");
+  } finally {
+    unlockForm(innovateOnlyForm);
+    innovateVerifyBtn.disabled = false;
+  }
+});
+
+// Form B Pay button
+innovateOnlyPayBtn.addEventListener("click", async () => {
+  const email = document.getElementById("innovateEmail").value.trim();
+  const name  = document.getElementById("innovateName").value.trim();
+  const btn   = innovateOnlyPayBtn;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Opening payment...";
+
+  try {
+    const paystackResponse = await new Promise((resolve, reject) => {
+      const handler = PaystackPop.setup({
+        key: "pk_test_fdee842fa175444c2e87ef45bd710104c894358a",
+        email, amount: 12000 * 100, currency: "NGN",
+        callback: (r) => resolve(r),
+        onClose: () => reject(new Error("Payment cancelled")),
+      });
+      handler.openIframe();
+    });
+
+    lockForm(innovateOnlyForm, "Saving your Innovate registration...");
+    btn.innerHTML = "Processing...";
+
+    const res = await fetch(`${BACKEND_URL}/innovate-pay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name, reference: paystackResponse.reference, amount: 12000 }),
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message || "Payment failed");
+
+    // Show success state
+    innovateOnlyFields.style.display = "none";
+    innovateOnlyThanks.style.display = "block";
+
+  } catch (err) {
+    console.error(err);
+    if (err.message !== "Payment cancelled") {
+      showStatus(innovateStatusBox, "❌ Payment failed: " + err.message, "error");
+    }
+  } finally {
+    unlockForm(innovateOnlyForm);
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+});
+
+// ---------- FILE UPLOAD (Form A) ----------
 regNumberInput.addEventListener("change", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-
+  e.preventDefault(); e.stopPropagation();
   const file = e.target.files[0];
-  uploadedFile = null;
-  abuVerified = false;
+  uploadedFile = null; abuVerified = false;
   resetPreview();
 
-  if (!file) {
-    idError.textContent = "Please upload your ABU ID or admission letter.";
-    checkFormValidity();
-    return;
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    idError.textContent = "File too large. Maximum size is 5MB.";
-    e.target.value = "";
-    checkFormValidity();
-    return;
-  }
+  if (!file) { idError.textContent = "Please upload your ABU ID or admission letter."; checkFormValidity(); return; }
+  if (file.size > 5 * 1024 * 1024) { idError.textContent = "File too large. Maximum size is 5MB."; e.target.value = ""; checkFormValidity(); return; }
 
   const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
-  if (!validTypes.includes(file.type)) {
-    idError.textContent = "Invalid file type. Please upload JPG, PNG, or PDF only.";
-    e.target.value = "";
-    checkFormValidity();
-    return;
-  }
+  if (!validTypes.includes(file.type)) { idError.textContent = "Invalid file type. Please upload JPG, PNG, or PDF only."; e.target.value = ""; checkFormValidity(); return; }
 
   uploadedFile = file;
   idError.textContent = "";
   verifyStatus.textContent = "🔍 Verifying ABU ID...";
   verifyStatus.style.color = "#f7de50";
-
   idPreview.style.display = "flex";
   idFileName.textContent = file.name;
-  idFileType.textContent = file.type.includes("pdf")
-    ? "PDF document"
-    : `${file.type.toUpperCase()} image`;
-
-  if (file.type.includes("pdf")) {
-    idPreviewImage.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
-  } else {
-    idPreviewImage.src = URL.createObjectURL(file);
-  }
-
+  idFileType.textContent = file.type.includes("pdf") ? "PDF document" : `${file.type.toUpperCase()} image`;
+  idPreviewImage.src = file.type.includes("pdf") ? "https://cdn-icons-png.flaticon.com/512/337/337946.png" : URL.createObjectURL(file);
   verifyIDCard(file);
 });
 
-// School selection
+// ---------- SCHOOL SELECT ----------
 schoolSelectEl.addEventListener("change", function () {
   const value = this.value;
-
   paymentSection.style.display = "none";
   regSection.style.display = "none";
-  resetPreview();
-  uploadedFile = null;
-  abuVerified = false;
-
-  if (!value) {
-    payBtn.disabled = true;
-    return;
-  }
-
+  resetPreview(); uploadedFile = null; abuVerified = false;
+  if (!value) { payBtn.disabled = true; return; }
   if (value === "yes") {
     baseAmount = 5000;
     paymentText.textContent = "ABU Student Ticket: ₦5,000";
@@ -425,57 +447,28 @@ schoolSelectEl.addEventListener("change", function () {
     paymentText.textContent = "Non-ABU Student Ticket: ₦12,000";
     abuVerified = true;
   }
-
   paymentSection.style.display = "block";
   checkFormValidity();
 });
 
-// Input watchers
 document.getElementById("name").addEventListener("input", checkFormValidity);
-document.getElementById("email").addEventListener("input", checkFormValidity);
+payBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); handlePayment(); });
+if (innovateYes) innovateYes.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); handleInnovatePayment(); });
+if (innovateNo)  innovateNo.addEventListener("click", () => { innovateSection.style.display = "none"; });
 
-// Main payment button
-payBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  handlePayment();
-});
-
-// Lex Innovate buttons
-if (innovateYes) {
-  innovateYes.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleInnovatePayment();
-  });
-}
-
-if (innovateNo) {
-  innovateNo.addEventListener("click", () => {
-    innovateSection.style.display = "none";
-  });
-}
-
-// ---------- NAVIGATION & ANIMATIONS ----------
-navToggle.addEventListener("click", () => {
-  document.body.classList.toggle("nav-open");
-});
-
-navLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    if (window.innerWidth <= 720) {
-      document.body.classList.remove("nav-open");
-    }
-  });
+// ---------- NAV ----------
+navToggle.addEventListener("click", () => { document.body.classList.toggle("nav-open"); });
+navLinks.forEach((link) => { link.addEventListener("click", () => { if (window.innerWidth <= 720) document.body.classList.remove("nav-open"); }); });
+document.addEventListener("click", (e) => {
+  if (!document.body.classList.contains("nav-open")) return;
+  if (!nav.contains(e.target) && !navToggle.contains(e.target)) document.body.classList.remove("nav-open");
 });
 
 function updateActiveLink() {
   const scrollY = window.scrollY + 120;
   sections.forEach((section) => {
-    const top = section.offsetTop;
-    const height = section.offsetHeight;
     const id = section.getAttribute("id");
-    if (scrollY >= top && scrollY < top + height) {
+    if (scrollY >= section.offsetTop && scrollY < section.offsetTop + section.offsetHeight) {
       navLinks.forEach((l) => l.classList.remove("active"));
       const current = document.querySelector(`.nav-link[href="#${id}"]`);
       if (current) current.classList.add("active");
@@ -485,103 +478,55 @@ function updateActiveLink() {
 
 let ticking = false;
 window.addEventListener("scroll", () => {
-  if (!ticking) {
-    requestAnimationFrame(() => {
-      updateActiveLink();
-      ticking = false;
-    });
-    ticking = true;
-  }
+  if (!ticking) { requestAnimationFrame(() => { updateActiveLink(); ticking = false; }); ticking = true; }
 }, { passive: true });
 
-const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
 const fadeObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
-    const el = entry.target;
     if (entry.isIntersecting) {
-      el.classList.add("visible");
-      const delay = el.getAttribute("data-delay");
-      if (delay) el.style.setProperty("--delay", delay);
+      entry.target.classList.add("visible");
+      const delay = entry.target.getAttribute("data-delay");
+      if (delay) entry.target.style.setProperty("--delay", delay);
     }
   });
-}, observerOptions);
+}, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
 
-document
-  .querySelectorAll(
-    ".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]"
-  )
-  .forEach((el) => fadeObserver.observe(el));
+document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]").forEach((el) => fadeObserver.observe(el));
 
-// ---------- INIT ----------
 updateActiveLink();
 checkFormValidity();
 
-// ---------- COUNTDOWN TIMER ----------
+// ---------- COUNTDOWN ----------
 const eventDate = new Date("2026-03-31T00:00:00").getTime();
 let countdownInterval;
-
 function updateCountdown() {
-  const now = Date.now();
-  const distance = eventDate - now;
-
+  const distance = eventDate - Date.now();
   if (distance <= 0) {
-    const countdownEl = document.querySelector(".countdown");
-    if (countdownEl) {
-      countdownEl.innerHTML = '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>';
-    }
-    clearInterval(countdownInterval);
-    return;
+    const el = document.querySelector(".countdown");
+    if (el) el.innerHTML = '<span class="countdown-ended">🎉 Lex Xperience is Live!</span>';
+    clearInterval(countdownInterval); return;
   }
-
-  const days  = Math.floor(distance / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins  = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  const secs  = Math.floor((distance % (1000 * 60)) / 1000);
-
+  const d = Math.floor(distance / 86400000);
+  const h = Math.floor((distance % 86400000) / 3600000);
+  const m = Math.floor((distance % 3600000) / 60000);
+  const s = Math.floor((distance % 60000) / 1000);
   function setVal(id, val) {
-    const el = document.getElementById(id);
-    if (!el) return;
+    const el = document.getElementById(id); if (!el) return;
     const formatted = String(val).padStart(2, "0");
     if (el.textContent !== formatted) {
       el.textContent = formatted;
-      el.classList.remove("tick");
-      void el.offsetWidth;
-      el.classList.add("tick");
+      el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick");
       setTimeout(() => el.classList.remove("tick"), 150);
     }
   }
-
-  setVal("cd-days",  days);
-  setVal("cd-hours", hours);
-  setVal("cd-mins",  mins);
-  setVal("cd-secs",  secs);
+  setVal("cd-days", d); setVal("cd-hours", h); setVal("cd-mins", m); setVal("cd-secs", s);
 }
-
 updateCountdown();
 countdownInterval = setInterval(updateCountdown, 1000);
+
 // ---------- BACK TO TOP ----------
 const backToTopBtn = document.getElementById("backToTop");
-
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 400) {
-    backToTopBtn.classList.add("visible");
-  } else {
-    backToTopBtn.classList.remove("visible");
-  }
+  backToTopBtn.classList.toggle("visible", window.scrollY > 400);
 }, { passive: true });
-
-backToTopBtn.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
-// Close nav when tapping outside on mobile
-document.addEventListener("click", (e) => {
-  const isNavOpen = document.body.classList.contains("nav-open");
-  if (!isNavOpen) return;
-
-  const clickedInsideNav = nav.contains(e.target);
-  const clickedToggle = navToggle.contains(e.target);
-
-  if (!clickedInsideNav && !clickedToggle) {
-    document.body.classList.remove("nav-open");
-  }
-});
+backToTopBtn.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: "smooth" }); });

@@ -254,104 +254,152 @@
   <section class="section section-cta fade-in">
     <div class="section-cta-overlay"></div>
     <div class="container section-cta-inner">
-      <div class="fade-slide-left">
-        <p class="section-kicker">Ready to Define the Future?</p>
-        <h2 class="section-title">
-          Secure your seat at the most anticipated student‑led legal event of the year.
-        </h2>
-        <p class="section-body" id="register">
-          Spaces are limited. Reserve your spot to connect, learn, and build alongside the brightest minds in law, tech, and leadership.
-        </p>
-        <ul class="pill-list pill-list-light fade-in" data-delay="0.2s">
-          <li value="yes">Student Pass</li>
-          <li>Young Professional Pass</li>
-        </ul>
-      </div>
-<div>
-      <form class="form fade-slide-right" id="registerForm" novalidate>
-        <div id="formFields">
-          <div class="form-group fade-in" data-delay="0.1s">
-            <label for="name">Full Name<span>*</span></label>
-            <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Grace Olorunfemi" required />
-            <small class="error-message"></small>
-          </div>
-          <div class="form-group fade-in" data-delay="0.2s">
-            <label for="email">Email Address<span>*</span></label>
-            <input type="email" id="email" name="email" autocomplete="email" placeholder="e.g. grace@example.com" required />
-            <small class="error-message"></small>
-          </div>
-          <div class="form-group fade-in" data-delay="0.3s">
-            <label for="school">Are you a student of Ahmadu Bello University?<span>*</span></label>
-            <select id="school" name="school" autocomplete="off" required>
-              <option value="">Select an option</option>
-              <option value="yes">Yes, I am an ABU student</option>
-              <option value="no">No, I am not an ABU student</option>
-            </select>
-            <small class="error-message"></small>
-          </div>
-
-          <div class="form-group fade-in" id="regSection" style="display:none;">
-            <label for="regNumber">Upload Your ABU ID Card or Admission Letter (JPG/PNG/PDF)<span>*</span></label>
-            <div class="file-upload-container">
-    <input type="file" id="regNumber" name="regNumber" accept=".jpg,.jpeg,.png,.pdf" />
+  <div class="fade-slide-left">
+    <p class="section-kicker">Ready to Define the Future?</p>
+    <h2 class="section-title">
+      Secure your seat at the most anticipated student‑led legal event of the year.
+    </h2>
+    <p class="section-body" id="register">
+      Spaces are limited. Reserve your spot to connect, learn, and build alongside the brightest minds in law, tech, and leadership.
+    </p>
+    <ul class="pill-list pill-list-light fade-in" data-delay="0.2s">
+      <li>Student Pass</li>
+      <li>Young Professional Pass</li>
+    </ul>
   </div>
-            <div class="id-preview" id="idPreview">
-              <img id="idPreviewImage" alt="ID preview" />
-              <div class="file-meta">
-                <div class="file-name" id="idFileName"></div>
-                <div id="idFileType"></div>
-              </div>
-            </div>
-            <small class="form-footnote">Max file size: 5MB</small><br/>
-            
-            <small id="verifyStatus" style="color:#f7de50; display:block; margin-top:0.5rem;"></small>
-            <small class="error-message" id="idError"></small>
-          </div>
 
-          <div class="form-group fade-in" data-delay="0.5s">
-            <label for="interest">What are you most excited to explore?</label>
-            <textarea id="interest" name="interest" autocomplete="off" rows="3" placeholder="Tell us what you're most excited to explore..."></textarea>
-          </div>
+  <div>
+    <!-- Registration Type Toggle -->
+    <div class="reg-toggle fade-in" data-delay="0.1s">
+      <label class="reg-toggle-option">
+        <input type="radio" name="regType" value="new" checked />
+        <span class="reg-toggle-label">
+          <span class="reg-toggle-title">Register for Lex Xperience</span>
+          <span class="reg-toggle-sub">New registration & payment</span>
+        </span>
+      </label>
+      <label class="reg-toggle-option">
+        <input type="radio" name="regType" value="innovate" />
+        <span class="reg-toggle-label">
+          <span class="reg-toggle-title">Already Registered – Add Lex Innovate</span>
+          <span class="reg-toggle-sub">Upgrade with Lex Innovate Pitch (₦12,000)</span>
+        </span>
+      </label>
+    </div>
 
-          <div class="form-group" id="paymentSection" style="display:none;">
-            <p id="paymentText"></p>
-            <button 
-  type="button" 
-  class="btn btn-primary btn-block" 
-  id="payBtn" 
-  disabled
->
-  Proceed to Payment
-</button>
-
-
-            <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
-          </div>
+    <!-- FORM A: Full Lex Xperience Registration -->
+    <form class="form fade-slide-right" id="registerForm" novalidate>
+      <div id="formFields">
+        <div class="form-group fade-in" data-delay="0.1s">
+          <label for="name">Full Name<span>*</span></label>
+          <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Grace Olorunfemi" required />
+          <small class="error-message"></small>
+        </div>
+        <div class="form-group fade-in" data-delay="0.2s">
+          <label for="email">Email Address<span>*</span></label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="e.g. grace@example.com" required />
+          <small class="error-message" id="emailError"></small>
+        </div>
+        <div class="form-group fade-in" data-delay="0.3s">
+          <label for="school">Are you a student of Ahmadu Bello University?<span>*</span></label>
+          <select id="school" name="school" autocomplete="off" required>
+            <option value="">Select an option</option>
+            <option value="yes">Yes, I am an ABU student</option>
+            <option value="no">No, I am not an ABU student</option>
+          </select>
+          <small class="error-message"></small>
         </div>
 
-        <div class="post-payment" id="paymentThanks" style="display: none;">
-    Thank you for registering! Your details would be confirmed. You will receive a confirmation email with next steps.
-  
-  <div id="innovateSection" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px;">
-    <h4><a href="#innovatey" style="text-decoration: none; color: white;">Add Lex Innovate Pitch</a></h4>
-    <p>Upgrade your experience with Lex Innovate (₦12,000)</p>
-    <div style="display: flex; gap: 1rem;">
-      <button id="innovateYes" class="btn btn-primary">Yes</button>
-      <button id="innovateNo" class="btn btn-outline">No</button>
-    </div>
-</div>
-    </div>
-<div class="form-loader">
-      <div class="form-loader-spinner"></div>
-      <span class="form-loader-text" id="loaderMessage">Processing...</span>
-    </div>
-      </form>
+        <div class="form-group fade-in" id="regSection" style="display:none;">
+          <label for="regNumber">Upload Your ABU ID Card or Admission Letter (JPG/PNG/PDF)<span>*</span></label>
+          <div class="file-upload-container">
+            <input type="file" id="regNumber" name="regNumber" accept=".jpg,.jpeg,.png,.pdf" />
+          </div>
+          <div class="id-preview" id="idPreview">
+            <img id="idPreviewImage" alt="ID preview" />
+            <div class="file-meta">
+              <div class="file-name" id="idFileName"></div>
+              <div id="idFileType"></div>
+            </div>
+          </div>
+          <small class="form-footnote">Max file size: 5MB</small><br/>
+          <small id="verifyStatus" style="color:#f7de50; display:block; margin-top:0.5rem;"></small>
+          <small class="error-message" id="idError"></small>
+        </div>
 
-      
+        <div class="form-group fade-in" data-delay="0.5s">
+          <label for="interest">What are you most excited to explore?</label>
+          <textarea id="interest" name="interest" autocomplete="off" rows="3" placeholder="Tell us what you're most excited to explore..."></textarea>
+        </div>
+
+        <div class="form-group" id="paymentSection" style="display:none;">
+          <p id="paymentText"></p>
+          <button type="button" class="btn btn-primary btn-block" id="payBtn" disabled>
+            Proceed to Payment
+          </button>
+          <p class="form-footnote">You'll receive a confirmation email with next steps.</p>
+        </div>
+      </div>
+
+      <div class="post-payment" id="paymentThanks" style="display: none;">
+        Thank you for registering! Your details would be confirmed. You will receive a confirmation email with next steps.
+        <div id="innovateSection" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px;">
+          <h4><a href="#innovatey" style="text-decoration: none; color: white;">Add Lex Innovate Pitch</a></h4>
+          <p>Upgrade your experience with Lex Innovate (₦12,000)</p>
+          <div style="display: flex; gap: 1rem;">
+            <button id="innovateYes" class="btn btn-primary">Yes</button>
+            <button id="innovateNo" class="btn btn-outline">No</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-loader">
+        <div class="form-loader-spinner"></div>
+        <span class="form-loader-text" id="loaderMessage">Processing...</span>
+      </div>
+    </form>
+
+    <!-- FORM B: Already Registered – Add Lex Innovate -->
+    <form class="form fade-slide-right" id="innovateOnlyForm" novalidate style="display:none;">
+      <div id="innovateOnlyFields">
+        <p class="form-intro-note">Enter the name and email you used when registering for Lex Xperience. We'll verify your registration before proceeding.</p>
+
+        <div class="form-group">
+          <label for="innovateName">Full Name<span>*</span></label>
+          <input type="text" id="innovateName" name="innovateName" autocomplete="name" placeholder="e.g. Grace Olorunfemi" required />
+          <small class="error-message"></small>
+        </div>
+        <div class="form-group">
+          <label for="innovateEmail">Email Address<span>*</span></label>
+          <input type="email" id="innovateEmail" name="innovateEmail" autocomplete="email" placeholder="e.g. grace@example.com" required />
+          <small class="error-message" id="innovateEmailError"></small>
+        </div>
+
+        <div class="form-status-box" id="innovateStatusBox" style="display:none;"></div>
+
+        <div class="form-group" id="innovatePayGroup" style="display:none;">
+          <button type="button" class="btn btn-primary btn-block" id="innovateOnlyPayBtn">
+            Pay ₦12,000 for Lex Innovate
+          </button>
+          <p class="form-footnote">You'll receive a confirmation email after payment.</p>
+        </div>
+
+        <button type="button" class="btn btn-outline btn-block" id="innovateVerifyBtn" style="margin-top:0.5rem;">
+          Verify & Continue
+        </button>
+      </div>
+
+      <div class="post-payment" id="innovateOnlyThanks" style="display:none;">
+        You're in! Your Lex Innovate registration is confirmed. Check your email for details.
+      </div>
+
+      <div class="form-loader">
+        <div class="form-loader-spinner"></div>
+        <span class="form-loader-text" id="innovateLoaderMessage">Verifying...</span>
+      </div>
+    </form>
   </div>
-
-  
-    </div>
+</div>
   </section>
 
   <footer class="footer fade-in">
