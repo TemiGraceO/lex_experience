@@ -350,9 +350,10 @@
     /* ---------- HERO ---------- */
     .hero {
       position: relative;
-      padding: 6.5rem 0 5rem;
+      padding: 4.5rem 0 5rem;
       color: var(--text-main);
       overflow: hidden;
+
     }
 
     .hero::before {
@@ -1060,8 +1061,8 @@
     white-space: nowrap;
   }
       #home{
-        margin-top: -17%;
-        margin-bottom: -4%;
+        margin-top: -15%;
+        margin-bottom: -3%;
       }
       .nav {
         position: fixed;
