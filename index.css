@@ -755,7 +755,7 @@
   max-width: 120px;
   height: 50px;
   object-fit: contain;
-  opacity: 0.75;
+  opacity: 0.79;
   transition: all 0.3s ease;
 }
 
@@ -1568,3 +1568,229 @@ input, select, textarea {
     font-size: 1rem;
   }
 }
+/* ================================================
+       SPONSORS — PROFESSIONAL REDESIGN
+       ================================================ */
+
+    #sponsors { padding: 5rem 0 4rem; }
+
+    /* Divider label style */
+    .sponsor-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .sponsor-label::before,
+    .sponsor-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(249, 250, 251, 0.07);
+    }
+
+    /* Headline partner */
+    .sponsor-headline {
+      margin-top: 2.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .sponsor-headline-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.2rem 2.5rem;
+      background: radial-gradient(ellipse at center, rgba(247,222,80,0.06) 0%, rgba(5,6,8,0.5) 70%);
+      border: 1px solid rgba(247, 222, 80, 0.18);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      min-height: 130px;
+    }
+
+    .sponsor-headline-card::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(247,222,80,0.04), transparent 60%);
+      pointer-events: none;
+    }
+
+    .sponsor-headline-card:hover {
+      border-color: rgba(247, 222, 80, 0.4);
+      box-shadow: 0 0 50px rgba(247,222,80,0.07), inset 0 0 40px rgba(247,222,80,0.02);
+      transform: translateY(-3px);
+    }
+
+    .sponsor-headline-card img {
+      max-height: 76px;
+      max-width: 340px;
+      width: auto;
+      object-fit: contain;
+      filter: grayscale(0.2) brightness(1.1);
+      opacity: 0.88;
+      transition: all 0.4s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sponsor-headline-card:hover img {
+      filter: grayscale(0) brightness(1.15);
+      opacity: 1;
+    }
+
+    /* Gold partners grid */
+    .sponsor-gold { margin-top: 0.5rem; }
+
+    /* Marquee wrapper — hides overflow and adds fade edges */
+.sponsor-marquee-wrapper {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* Soft fade on left and right edges */
+.sponsor-marquee-wrapper::before,
+.sponsor-marquee-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sponsor-marquee-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #050608, transparent);
+}
+
+.sponsor-marquee-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #050608, transparent);
+}
+
+/* The scrolling track */
+.sponsor-marquee-track {
+  display: flex;
+  gap: 0.9rem;
+  width: max-content;
+  animation: marqueeScroll 18s linear infinite;
+}
+
+.sponsor-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Individual cards stay the same size */
+.sponsor-marquee-track .sponsor-card {
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+    .sponsor-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+      background: rgba(14, 16, 21, 0.85);
+      border: 1px solid rgba(249, 250, 251, 0.06);
+      border-radius: var(--radius-md);
+      min-height: 96px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.35s ease;
+    }
+
+    .sponsor-card::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(247,222,80,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .sponsor-card:hover {
+      border-color: rgba(247, 222, 80, 0.28);
+      background: rgba(247, 222, 80, 0.03);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 1px rgba(247,222,80,0.08);
+    }
+
+    .sponsor-card:hover::after { opacity: 1; }
+
+    .sponsor-card img {
+      max-height: 50px;
+      max-width: 100%;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.95;
+      transition: all 0.35s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sponsor-card:hover img {
+      filter: grayscale(0) brightness(1.05);
+      opacity: 1;
+    }
+
+    /* CTA strip */
+    .sponsor-cta {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 2rem 1.5rem;
+      border: 1px dashed rgba(247, 222, 80, 0.18);
+      border-radius: var(--radius-lg);
+      background: rgba(247, 222, 80, 0.02);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .sponsor-cta:hover {
+      border-color: rgba(247, 222, 80, 0.32);
+      background: rgba(247, 222, 80, 0.035);
+    }
+
+    .sponsor-cta p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    /* ---------- CTA / REGISTRATION ---------- */
+    .section-cta {
+      position: relative;
+      padding: 5rem 0;
+      color: #f9fafb;
+      overflow: hidden;
+    }
+
+    .section-cta-overlay {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at top, #f7de50, #bfa438 45%, #050608 100%);
+      opacity: 0.12;
+      mix-blend-mode: screen;
+    }
+
+    .section-cta-inner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr);
+      gap: 3rem;
+      align-items: flex-start;
+    }
