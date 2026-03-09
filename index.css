@@ -467,8 +467,6 @@
     .hero-art {
       display: flex;
       justify-content: flex-end;
-      border-bottom-left-radius: 2%;
-      border-bottom: #b99a2d;
     }
 
     .hero-image:hover {
@@ -752,30 +750,26 @@
       gap: 0.7rem;
     }
 
-    .sponsor-logo {
-      min-width: 120px;
-      padding: 0.7rem 1rem;
-      border-radius: var(--radius-md);
-      border: 1px dashed rgba(249, 250, 251, 0.18);
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
+    .sponsor-logo img {
+  width: 100%;
+  max-width: 120px;
+  height: 50px;
+  object-fit: contain;
+  opacity: 0.75;
+  transition: all 0.3s ease;
+}
 
-    .sponsor-logo.placeholder {
-      background: radial-gradient(circle at top, rgba(247, 222, 80, 0.05), #050608);
-    }
+.sponsor-logo:hover img {
+  filter: grayscale(0) brightness(1);
+  opacity: 1;
+}
+
+#alone img {
+  max-width: 200px;
+  height: 60px;
+}
+
     
-
-    .sponsor-logo:hover {
-      border-style: solid;
-      border-color: var(--accent-gold-soft);
-      background: rgba(247, 222, 80, 0.08);
-      transform: translateY(-3px);
-    }
 
     .sponsor-cta {
       margin-top: 2rem;
