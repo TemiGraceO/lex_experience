@@ -23,7 +23,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendLexEmail({ to, subject, html }) {
   try {
     await resend.emails.send({
-      from: process.env.SENDER_EMAIL || 'Lex Xperience <no-reply@lexexperience.ng>',
+      from: process.env.SENDER_EMAIL || 'Lex Xperience <no-reply@lexexperience.com>',
       to,
       subject,
       html,
@@ -680,5 +680,5 @@ app.post("/innovate-pay", async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

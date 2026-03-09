@@ -60,6 +60,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var innovateOnlyFields = document.getElementById("innovateOnlyFields");
   var backToTopBtn       = document.getElementById("backToTop");
 
+  // Initialise payBtn as disabled on load
+  if (payBtn) { payBtn.disabled = true; payBtn.style.opacity = '0.6'; payBtn.style.cursor = 'not-allowed'; }
+
   // Prevent native form submit
   if (registerForm)     registerForm.addEventListener("submit",    function(e){ e.preventDefault(); e.stopPropagation(); });
   if (innovateOnlyForm) innovateOnlyForm.addEventListener("submit", function(e){ e.preventDefault(); e.stopPropagation(); });
@@ -67,15 +70,21 @@ document.addEventListener("DOMContentLoaded", function () {
   // ---------- FORM VALIDITY ----------
   function checkFormValidity() {
     if (!payBtn) return;
-    var name       = (document.getElementById("name") || {}).value || "";
-    var email      = (document.getElementById("email") || {}).value || "";
+    var name       = (document.getElementById("name")  || {value:""}).value.trim();
+    var email      = (document.getElementById("email") || {value:""}).value.trim();
     var school     = schoolSelectEl ? schoolSelectEl.value : "";
-    var schoolName = schoolNameInput ? schoolNameInput.value.trim() : "";
-    name  = name.trim(); email = email.trim();
-    var emailOk = email ? emailIsValid : false;
+    var schoolName = (document.getElementById("schoolName") || {value:""}).value.trim();
+    var errorMsg   = (document.getElementById("emailError") || {textContent:""}).textContent;
+
+    // Email OK if: has @ and dot, AND backend hasn't confirmed it's a duplicate
+    var emailLooksValid = email.length > 3 && email.indexOf("@") > 0 && email.lastIndexOf(".") > email.indexOf("@");
+    var isDuplicate     = errorMsg.indexOf("already registered") !== -1;
+    var emailOk         = emailLooksValid && !isDuplicate;
+
     var isValid = !!(name && email && school && emailOk);
     if (school === "yes") isValid = isValid && uploadedFile !== null && abuVerified;
     if (school === "no")  isValid = isValid && schoolName.length > 0;
+
     payBtn.disabled      = !isValid;
     payBtn.style.opacity = isValid ? "1" : "0.6";
     payBtn.style.cursor  = isValid ? "pointer" : "not-allowed";
