@@ -467,6 +467,8 @@
     .hero-art {
       display: flex;
       justify-content: flex-end;
+      border-bottom-left-radius: 2%;
+      border-bottom: #b99a2d;
     }
 
     .hero-image:hover {
