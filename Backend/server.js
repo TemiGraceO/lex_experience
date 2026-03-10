@@ -304,7 +304,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
                       </tr>
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall,Faculty of Law, ABU Zaria</td>
                       </tr>
                     </table>
                   </td>
@@ -328,7 +328,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
               <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
               <p style="margin:0;font-size:12px;color:#6b7280;">
-                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp;
                 <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
               </p>
             </td>
@@ -426,7 +426,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
                       </tr>
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall,Faculty of Law, ABU Zaria</td>
                       </tr>
                     </table>
                   </td>
@@ -461,7 +461,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
               <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
               <p style="margin:0;font-size:12px;color:#6b7280;">
-                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp;
                 <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
               </p>
             </td>
@@ -617,7 +617,7 @@ app.post("/innovate-pay", async (req, res) => {
                       </tr>
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td>
                       </tr>
                     </table>
                   </td>
@@ -652,7 +652,7 @@ app.post("/innovate-pay", async (req, res) => {
             <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
               <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
               <p style="margin:0;font-size:12px;color:#6b7280;">
-                Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                Mahdi Hall,Faculty of Law, ABU Zaria &nbsp;|&nbsp;
                 <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
               </p>
             </td>
