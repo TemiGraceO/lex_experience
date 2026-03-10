@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lex Xperience — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #f7de50;
+      --gold-soft: #f2e7a2;
+      --gold-dim: rgba(247,222,80,0.15);
+      --bg: #07080c;
+      --bg2: #0e1015;
+      --bg3: #141821;
+      --border: rgba(247,222,80,0.15);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --red: #f87171;
+      --green: #4ade80;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 0%, rgba(247,222,80,0.08) 0%, transparent 70%);
+    }
+
+    .login-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+    .login-logo span { color: var(--gold); }
+
+    .login-sub {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 36px;
+    }
+
+    .login-box input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .login-box input:focus { border-color: var(--gold); }
+
+    .login-btn {
+      width: 100%;
+      background: var(--gold);
+      color: #07080c;
+      border: none;
+      border-radius: 8px;
+      padding: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity 0.2s;
+    }
+    .login-btn:hover { opacity: 0.88; }
+
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; }
+
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+    }
+    .topbar-logo span { color: var(--gold); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    .refresh-btn {
+      background: var(--gold-dim);
+      border: 1px solid var(--border);
+      color: var(--gold);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { background: rgba(247,222,80,0.25); }
+
+    .main { padding: 32px; max-width: 1300px; margin: 0 auto; }
+
+    /* ── STATS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 8px 20px;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--gold);
+      color: #07080c;
+      font-weight: 600;
+    }
+
+    /* ── SUB TABS ── */
+    .sub-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .sub-tab {
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .sub-tab.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    /* ── SEARCH ── */
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      width: 100%;
+      max-width: 360px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: var(--gold); }
+    .search-bar input::placeholder { color: var(--muted); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: var(--bg3);
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(247,222,80,0.06);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: rgba(247,222,80,0.03); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-abu {
+      background: rgba(96,165,250,0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(96,165,250,0.25);
+    }
+
+    .badge-nonaby {
+      background: rgba(167,139,250,0.12);
+      color: #c4b5fd;
+      border: 1px solid rgba(167,139,250,0.25);
+    }
+
+    .badge-innovate {
+      background: rgba(34,197,94,0.12);
+      color: #86efac;
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+
+    .amount { color: var(--gold); font-weight: 600; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section-panel { display: none; }
+    .section-panel.active { display: block; }
+
+    @media (max-width: 700px) {
+      .main { padding: 16px; }
+      .topbar { padding: 12px 16px; }
+      th, td { padding: 10px 10px; font-size: 13px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">Lex<span>Xperience</span></div>
+    <div class="login-sub">Admin Dashboard</div>
+    <input type="password" id="passwordInput" placeholder="Enter admin password" />
+    <button class="login-btn" onclick="login()">Access Dashboard</button>
+    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-logo">Lex<span>Xperience</span> <span style="font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;">Admin</span></div>
+    <div class="topbar-right">
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Registrants</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub">Lex Xperience</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ABU Students</div>
+        <div class="stat-value" id="statAbu">—</div>
+        <div class="stat-sub">₦5,000 each</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Non-ABU</div>
+        <div class="stat-value" id="statNonAbu">—</div>
+        <div class="stat-sub">₦20,000 each</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lex Innovate</div>
+        <div class="stat-value" id="statInnovate">—</div>
+        <div class="stat-sub">₦20,000 each</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value" id="statRevenue">—</div>
+        <div class="stat-sub">All payments</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('xperience')">Lex Xperience</button>
+      <button class="tab" onclick="switchTab('innovate')">Lex Innovate</button>
+    </div>
+
+    <!-- LEX XPERIENCE PANEL -->
+    <div class="section-panel active" id="panel-xperience">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchSubTab('abu')">ABU Students</button>
+        <button class="sub-tab" onclick="switchSubTab('nonAbu')">Non-ABU Students</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="xperienceSearch" placeholder="Search by name or email..." oninput="filterTable('xperience')" />
+      </div>
+
+      <!-- ABU TABLE -->
+      <div id="panel-abu" class="section-panel active">
+        <div class="table-wrap">
+          <div class="loading" id="abuLoading">Loading...</div>
+          <table id="abuTable" style="display:none;">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Amount Paid</th>
+                <th>Registered</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody id="abuBody"></tbody>
+          </table>
+          <div class="empty-state" id="abuEmpty" style="display:none;">No ABU students registered yet.</div>
+        </div>
+      </div>
+
+      <!-- NON-ABU TABLE -->
+      <div id="panel-nonAbu" class="section-panel">
+        <div class="table-wrap">
+          <div class="loading" id="nonAbuLoading">Loading...</div>
+          <table id="nonAbuTable" style="display:none;">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Institution</th>
+                <th>Amount Paid</th>
+                <th>Registered</th>
+              </tr>
+            </thead>
+            <tbody id="nonAbuBody"></tbody>
+          </table>
+          <div class="empty-state" id="nonAbuEmpty" style="display:none;">No non-ABU students registered yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEX INNOVATE PANEL -->
+    <div class="section-panel" id="panel-innovate">
+      <div class="search-bar">
+        <input type="text" id="innovateSearch" placeholder="Search by name or email..." oninput="filterTable('innovate')" />
+      </div>
+      <div class="table-wrap">
+        <div class="loading" id="innovateLoading">Loading...</div>
+        <table id="innovateTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Amount Paid</th>
+              <th>Registered</th>
+            </tr>
+          </thead>
+          <tbody id="innovateBody"></tbody>
+        </table>
+        <div class="empty-state" id="innovateEmpty" style="display:none;">No Innovate registrations yet.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
+  const ADMIN_PASSWORD = "LexAdmin2026";
+
+  let allXperience = [];
+  let allInnovate  = [];
+  let currentTab    = 'xperience';
+  let currentSubTab = 'abu';
+
+  // ── AUTH ──
+  function login() {
+    const pw = document.getElementById("passwordInput").value;
+    if (pw === ADMIN_PASSWORD) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      loadAll();
+    } else {
+      document.getElementById("loginError").style.display = "block";
+    }
+  }
+
+  document.getElementById("passwordInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") login();
+  });
+
+  function logout() {
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("passwordInput").value = "";
+  }
+
+  // ── LOAD DATA ──
+  async function loadAll() {
+    await Promise.all([loadXperience(), loadInnovate()]);
+    updateStats();
+  }
+
+  async function loadXperience() {
+    try {
+      const res  = await fetch(BACKEND_URL + "/admin/registrations");
+      const data = await res.json();
+      allXperience = data.data || [];
+      renderXperience();
+    } catch(e) {
+      document.getElementById("abuLoading").textContent = "Failed to load. Check backend.";
+    }
+  }
+
+  async function loadInnovate() {
+    try {
+      const res  = await fetch(BACKEND_URL + "/admin/innovate");
+      const data = await res.json();
+      allInnovate = data.data || [];
+      renderInnovate();
+    } catch(e) {
+      document.getElementById("innovateLoading").textContent = "Failed to load. Check backend.";
+    }
+  }
+
+  // ── RENDER ──
+  function renderXperience(filter = "") {
+    const abu    = allXperience.filter(r => r.school === 'yes' && matches(r, filter));
+    const nonAbu = allXperience.filter(r => r.school === 'no'  && matches(r, filter));
+
+    renderTable('abu',    abu,    renderAbuRow);
+    renderTable('nonAbu', nonAbu, renderNonAbuRow);
+  }
+
+  function renderInnovate(filter = "") {
+    const list = allInnovate.filter(r => matches(r, filter));
+    renderTable('innovate', list, renderInnovateRow);
+  }
+
+  function renderTable(id, list, rowFn) {
+    const loading = document.getElementById(id + 'Loading');
+    const table   = document.getElementById(id + 'Table');
+    const empty   = document.getElementById(id + 'Empty');
+    const body    = document.getElementById(id + 'Body');
+
+    if (loading) loading.style.display = "none";
+
+    if (list.length === 0) {
+      if (table) table.style.display = "none";
+      if (empty) empty.style.display = "block";
+      return;
+    }
+
+    if (empty) empty.style.display = "none";
+    if (table) table.style.display = "table";
+    if (body)  body.innerHTML = list.map((r, i) => rowFn(r, i + 1)).join('');
+  }
+
+  function renderAbuRow(r, i) {
+    return `<tr>
+      <td style="color:var(--muted)">${i}</td>
+      <td><strong>${esc(r.name)}</strong></td>
+      <td style="color:var(--muted)">${esc(r.email)}</td>
+      <td class="amount">₦${Number(r.registrationPayment?.amount || 0).toLocaleString()}</td>
+      <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
+      <td><span class="badge badge-abu">ABU Student</span></td>
+    </tr>`;
+  }
+
+  function renderNonAbuRow(r, i) {
+    return `<tr>
+      <td style="color:var(--muted)">${i}</td>
+      <td><strong>${esc(r.name)}</strong></td>
+      <td style="color:var(--muted)">${esc(r.email)}</td>
+      <td style="color:var(--muted)">${esc(r.schoolName || '—')}</td>
+      <td class="amount">₦${Number(r.registrationPayment?.amount || 0).toLocaleString()}</td>
+      <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
+    </tr>`;
+  }
+
+  function renderInnovateRow(r, i) {
+    return `<tr>
+      <td style="color:var(--muted)">${i}</td>
+      <td><strong>${esc(r.name || '—')}</strong></td>
+      <td style="color:var(--muted)">${esc(r.email)}</td>
+      <td class="amount">₦${Number(r.amount || 0).toLocaleString()}</td>
+      <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
+    </tr>`;
+  }
+
+  // ── STATS ──
+  function updateStats() {
+    const abu    = allXperience.filter(r => r.school === 'yes');
+    const nonAbu = allXperience.filter(r => r.school === 'no');
+    const total  = allXperience.length;
+
+    const revenue = 
+      abu.reduce((s, r)    => s + Number(r.registrationPayment?.amount || 0), 0) +
+      nonAbu.reduce((s, r) => s + Number(r.registrationPayment?.amount || 0), 0) +
+      allInnovate.reduce((s, r) => s + Number(r.amount || 0), 0);
+
+    document.getElementById("statTotal").textContent    = total;
+    document.getElementById("statAbu").textContent      = abu.length;
+    document.getElementById("statNonAbu").textContent   = nonAbu.length;
+    document.getElementById("statInnovate").textContent = allInnovate.length;
+    document.getElementById("statRevenue").textContent  = "₦" + revenue.toLocaleString();
+  }
+
+  // ── TABS ──
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.section-panel[id^="panel-"]').forEach(p => {
+      p.classList.toggle('active', p.id === 'panel-' + tab);
+    });
+  }
+
+  function switchSubTab(sub) {
+    currentSubTab = sub;
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-abu').classList.toggle('active',    sub === 'abu');
+    document.getElementById('panel-nonAbu').classList.toggle('active', sub === 'nonAbu');
+  }
+
+  // ── SEARCH ──
+  function filterTable(type) {
+    if (type === 'xperience') {
+      const q = document.getElementById('xperienceSearch').value.toLowerCase();
+      renderXperience(q);
+    } else {
+      const q = document.getElementById('innovateSearch').value.toLowerCase();
+      renderInnovate(q);
+    }
+  }
+
+  function matches(r, filter) {
+    if (!filter) return true;
+    return (r.name  || '').toLowerCase().includes(filter) ||
+           (r.email || '').toLowerCase().includes(filter);
+  }
+
+  // ── UTILS ──
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' });
+  }
+</script>
+</body>
+</html>

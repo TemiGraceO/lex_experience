@@ -491,6 +491,25 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
   }
 });
 
+// ✅ ADMIN — Get all Xperience registrations
+app.get("/admin/registrations", async (req, res) => {
+  try {
+    const data = await Registration.find({}, '-registrationPayment.reference').sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// ✅ ADMIN — Get all Innovate registrations
+app.get("/admin/innovate", async (req, res) => {
+  try {
+    const data = await InnovateRegistration.find({}, '-reference').sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
 // ✅ GET FILE URL
 app.get("/get-file/:email", async (req, res) => {
   try {
