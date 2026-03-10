@@ -178,7 +178,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
 
     // ✅ AMOUNT VALIDATION — check paid amount matches expected
     const paidAmount   = Number(amount || 0);
-    const expectedAmount = school === 'yes' ? 5000 : 20000;
+    const expectedAmount = school === 'yes' ? 5000 : 12000;
 
     if (paidAmount < expectedAmount) {
       console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
