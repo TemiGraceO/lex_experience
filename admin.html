@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lex Xperience — Admin Dashboard</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -273,7 +274,8 @@
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 12px;
-      overflow: hidden;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     table {
@@ -351,11 +353,56 @@
     .section-panel { display: none; }
     .section-panel.active { display: block; }
 
-    @media (max-width: 700px) {
-      .main { padding: 16px; }
+    /* ── MOBILE CARD VIEW ── */
+    @media (max-width: 640px) {
+      .main { padding: 12px; }
       .topbar { padding: 12px 16px; }
-      th, td { padding: 10px 10px; font-size: 13px; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .topbar-logo { font-size: 16px; }
+
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+      .stat-card { padding: 14px 16px; }
+      .stat-value { font-size: 22px; }
+
+      .tabs { width: 100%; }
+      .tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
+
+      .search-bar input { max-width: 100%; }
+
+      /* Hide table, show cards */
+      table { display: none !important; }
+      .card-list { display: block; }
+
+      .reg-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+      }
+      .reg-card-name {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 4px;
+      }
+      .reg-card-email {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        word-break: break-all;
+      }
+      .reg-card-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .reg-card-row span:last-child { color: var(--text); }
+      .reg-card-row .amount { color: var(--gold); font-weight: 600; }
+    }
+
+    @media (min-width: 641px) {
+      .card-list { display: none; }
     }
   </style>
 </head>
@@ -447,6 +494,7 @@
             </thead>
             <tbody id="abuBody"></tbody>
           </table>
+          <div class="card-list" id="abuCards"></div>
           <div class="empty-state" id="abuEmpty" style="display:none;">No ABU students registered yet.</div>
         </div>
       </div>
@@ -468,6 +516,7 @@
             </thead>
             <tbody id="nonAbuBody"></tbody>
           </table>
+          <div class="card-list" id="nonAbuCards"></div>
           <div class="empty-state" id="nonAbuEmpty" style="display:none;">No non-ABU students registered yet.</div>
         </div>
       </div>
@@ -492,6 +541,7 @@
           </thead>
           <tbody id="innovateBody"></tbody>
         </table>
+        <div class="card-list" id="innovateCards"></div>
         <div class="empty-state" id="innovateEmpty" style="display:none;">No Innovate registrations yet.</div>
       </div>
     </div>
@@ -562,33 +612,35 @@
   function renderXperience(filter = "") {
     const abu    = allXperience.filter(r => r.school === 'yes' && matches(r, filter));
     const nonAbu = allXperience.filter(r => r.school === 'no'  && matches(r, filter));
-
-    renderTable('abu',    abu,    renderAbuRow);
-    renderTable('nonAbu', nonAbu, renderNonAbuRow);
+    renderTable('abu',    abu,    renderAbuRow,    renderAbuCard);
+    renderTable('nonAbu', nonAbu, renderNonAbuRow, renderNonAbuCard);
   }
 
   function renderInnovate(filter = "") {
     const list = allInnovate.filter(r => matches(r, filter));
-    renderTable('innovate', list, renderInnovateRow);
+    renderTable('innovate', list, renderInnovateRow, renderInnovateCard);
   }
 
-  function renderTable(id, list, rowFn) {
+  function renderTable(id, list, rowFn, cardFn) {
     const loading = document.getElementById(id + 'Loading');
     const table   = document.getElementById(id + 'Table');
     const empty   = document.getElementById(id + 'Empty');
     const body    = document.getElementById(id + 'Body');
+    const cards   = document.getElementById(id + 'Cards');
 
     if (loading) loading.style.display = "none";
 
     if (list.length === 0) {
       if (table) table.style.display = "none";
       if (empty) empty.style.display = "block";
+      if (cards) cards.innerHTML = "";
       return;
     }
 
     if (empty) empty.style.display = "none";
     if (table) table.style.display = "table";
     if (body)  body.innerHTML = list.map((r, i) => rowFn(r, i + 1)).join('');
+    if (cards && cardFn) cards.innerHTML = list.map((r, i) => cardFn(r, i + 1)).join('');
   }
 
   function renderAbuRow(r, i) {
@@ -602,6 +654,16 @@
     </tr>`;
   }
 
+  function renderAbuCard(r, i) {
+    return `<div class="reg-card">
+      <div class="reg-card-name">${esc(r.name)}</div>
+      <div class="reg-card-email">${esc(r.email)}</div>
+      <div class="reg-card-row"><span>Amount</span><span class="amount">₦${Number(r.registrationPayment?.amount || 0).toLocaleString()}</span></div>
+      <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
+      <div class="reg-card-row"><span>Type</span><span><span class="badge badge-abu">ABU Student</span></span></div>
+    </div>`;
+  }
+
   function renderNonAbuRow(r, i) {
     return `<tr>
       <td style="color:var(--muted)">${i}</td>
@@ -613,6 +675,16 @@
     </tr>`;
   }
 
+  function renderNonAbuCard(r, i) {
+    return `<div class="reg-card">
+      <div class="reg-card-name">${esc(r.name)}</div>
+      <div class="reg-card-email">${esc(r.email)}</div>
+      <div class="reg-card-row"><span>Institution</span><span>${esc(r.schoolName || '—')}</span></div>
+      <div class="reg-card-row"><span>Amount</span><span class="amount">₦${Number(r.registrationPayment?.amount || 0).toLocaleString()}</span></div>
+      <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
+    </div>`;
+  }
+
   function renderInnovateRow(r, i) {
     return `<tr>
       <td style="color:var(--muted)">${i}</td>
@@ -621,6 +693,15 @@
       <td class="amount">₦${Number(r.amount || 0).toLocaleString()}</td>
       <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
     </tr>`;
+  }
+
+  function renderInnovateCard(r, i) {
+    return `<div class="reg-card">
+      <div class="reg-card-name">${esc(r.name || '—')}</div>
+      <div class="reg-card-email">${esc(r.email)}</div>
+      <div class="reg-card-row"><span>Amount</span><span class="amount">₦${Number(r.amount || 0).toLocaleString()}</span></div>
+      <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
+    </div>`;
   }
 
   // ── STATS ──
