@@ -438,12 +438,19 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
                 <tr>
                   <td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
                     <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                      <strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day. Full programme schedule and logistics coming soon!
+                      <strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day.
                     </p>
                   </td>
                 </tr>
               </table>
-
+              <!-- WHATSAPP -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+          <tr><td style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:20px 24px;text-align:center;">
+            <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.1em;">Join the WhatsApp Group</p>
+            <p style="margin:0 0 14px;font-size:13px;color:#9ca3af;line-height:1.6;">Stay updated with event announcements, schedules, and important information.</p>
+            <a href="https://chat.whatsapp.com/IiDHDFP7uIA96hUqtLyns5" style="display:inline-block;background:#25d366;color:#ffffff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;text-decoration:none;">Join WhatsApp Group</a>
+          </td></tr>
+        </table>
               <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
                 Questions? Reach us at
                 <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
