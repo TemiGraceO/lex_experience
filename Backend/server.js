@@ -703,6 +703,93 @@ app.post("/innovate-pay", async (req, res) => {
   }
 });
 
+// ✅ MANUAL — Send ABU confirmation email after ID verification
+app.post("/admin/confirm-abu", async (req, res) => {
+  try {
+    const { email, adminKey } = req.body;
+
+    // Simple security check
+    if (adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const reg = await Registration.findOne({ email: email.trim().toLowerCase() });
+    if (!reg) return res.status(404).json({ success: false, message: "Registration not found" });
+    if (reg.school !== 'yes') return res.status(400).json({ success: false, message: "Not an ABU student" });
+
+    await sendLexEmail({
+      to: reg.email,
+      subject: "🎟️ Lex Xperience 2026 — Your Ticket is Confirmed!",
+      html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+          <div><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span></div>
+          <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">✓ Ticket Confirmed</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">You're in, ${reg.name}!</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">Your ABU ID has been verified and your ticket for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span> is confirmed. We can't wait to see you there!</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+              <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Ticket</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Ticket Type</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">ABU Student</td></tr>
+                <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;font-size:13px;color:#f9fafb;font-weight:600;">₦${reg.registrationPayment.amount.toLocaleString()}</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+              <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
+              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;"><strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day.</p>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr><td style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:20px 24px;text-align:center;">
+              <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.1em;">Join the WhatsApp Group</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#9ca3af;line-height:1.6;">Stay updated with announcements, schedules, and important information.</p>
+              <a href="https://chat.whatsapp.com/CUi0RRdRzoUHDSNQvxU71c" style="display:inline-block;background:#25d366;color:#ffffff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;text-decoration:none;">Join ABU Students Group</a>
+            </td></tr>
+          </table>
+          <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">Questions? Reach us at <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+          <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#6b7280;">Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp; <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+    });
+
+    res.json({ success: true, message: `Confirmation email sent to ${reg.email}` });
+  } catch (err) {
+    console.error("❌ confirm-abu error:", err);
+    res.status(500).json({ success: false, message: "Failed to send email" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

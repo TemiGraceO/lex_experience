@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lex Xperience — ABU Confirmation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #f7de50;
+      --gold-dim: rgba(247,222,80,0.15);
+      --bg: #07080c;
+      --bg2: #0e1015;
+      --bg3: #141821;
+      --border: rgba(247,222,80,0.15);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --red: #f87171;
+      --green: #4ade80;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 0%, rgba(247,222,80,0.08) 0%, transparent 70%);
+      padding: 20px;
+    }
+
+    .login-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .logo {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+    .logo span { color: var(--gold); }
+
+    .logo-sub {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    input[type="password"], input[type="email"], input[type="text"] {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--gold); }
+    input::placeholder { color: var(--muted); }
+
+    .btn-gold {
+      width: 100%;
+      background: var(--gold);
+      color: #07080c;
+      border: none;
+      border-radius: 8px;
+      padding: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-gold:hover { opacity: 0.88; }
+    .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+
+    /* ── MAIN ── */
+    #mainScreen { display: none; flex-direction: column; min-height: 100vh; }
+
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-logo { font-family: 'Cinzel', serif; font-size: 18px; }
+    .topbar-logo span { color: var(--gold); }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    .content {
+      flex: 1;
+      padding: 40px 20px;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .page-title {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .page-title span { color: var(--gold); }
+
+    .page-desc {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    /* ── SEND FORM ── */
+    .send-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .send-card label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .send-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .send-row input { margin-bottom: 0; flex: 1; }
+
+    .btn-send {
+      background: var(--gold);
+      color: #07080c;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-send:hover { opacity: 0.88; }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .result-box {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      line-height: 1.5;
+    }
+    .result-box.success {
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: var(--green);
+    }
+    .result-box.error {
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: var(--red);
+    }
+
+    /* ── HISTORY ── */
+    .history-title {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .history-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .history-email { font-size: 14px; font-weight: 500; }
+    .history-time { font-size: 12px; color: var(--muted); }
+    .history-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(74,222,128,0.1);
+      color: var(--green);
+      border: 1px solid rgba(74,222,128,0.25);
+      white-space: nowrap;
+    }
+
+    .empty-history {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 24px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    @media (max-width: 500px) {
+      .send-card { padding: 20px; }
+      .send-row { flex-direction: column; }
+      .btn-send { width: 100%; }
+      .topbar { padding: 12px 16px; }
+      .content { padding: 24px 16px; }
+      .login-box { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="logo">Lex<span>Xperience</span></div>
+    <div class="logo-sub">ABU Confirmation Portal</div>
+    <input type="password" id="passwordInput" placeholder="Enter admin password" />
+    <button class="btn-gold" onclick="login()">Access Portal</button>
+    <div class="error-msg" id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="topbar">
+    <div class="topbar-logo">Lex<span>Xperience</span> <span style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;">— ABU Confirmations</span></div>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="content">
+    <div class="page-title">Send <span>Confirmation</span></div>
+    <p class="page-desc">Once you've verified an ABU student's ID card in MongoDB/Cloudinary, enter their email below and send their ticket confirmation.</p>
+
+    <div class="send-card">
+      <label>Student Email Address</label>
+      <div class="send-row">
+        <input type="email" id="studentEmail" placeholder="e.g. student@abu.edu.ng" />
+        <button class="btn-send" id="sendBtn" onclick="sendConfirmation()">Send Confirmation</button>
+      </div>
+      <div class="result-box" id="resultBox"></div>
+    </div>
+
+    <div class="history-title">Sent This Session</div>
+    <div class="history-list" id="historyList">
+      <div class="empty-history">No confirmations sent yet this session.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
+  const ADMIN_PASSWORD = "LexAdmin2026";
+  const ADMIN_KEY = "LexConfirm2026"; // ← change this to match your ADMIN_KEY env var on Render
+
+  let sentHistory = [];
+
+  // ── AUTH ──
+  function login() {
+    const pw = document.getElementById("passwordInput").value;
+    if (pw === ADMIN_PASSWORD) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("mainScreen").style.display = "flex";
+    } else {
+      document.getElementById("loginError").style.display = "block";
+    }
+  }
+
+  document.getElementById("passwordInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") login();
+  });
+
+  function logout() {
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("mainScreen").style.display = "none";
+    document.getElementById("passwordInput").value = "";
+  }
+
+  // ── SEND CONFIRMATION ──
+  async function sendConfirmation() {
+    const email = document.getElementById("studentEmail").value.trim();
+    const resultBox = document.getElementById("resultBox");
+    const sendBtn = document.getElementById("sendBtn");
+
+    if (!email || !email.includes("@")) {
+      showResult("error", "Please enter a valid email address.");
+      return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending...";
+    resultBox.style.display = "none";
+
+    try {
+      const res = await fetch(BACKEND_URL + "/admin/confirm-abu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, adminKey: ADMIN_KEY })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showResult("success", "✅ Confirmation email sent successfully to " + email);
+        addToHistory(email);
+        document.getElementById("studentEmail").value = "";
+      } else {
+        showResult("error", "❌ " + (data.message || "Failed to send email."));
+      }
+
+    } catch (err) {
+      showResult("error", "❌ Could not reach backend. Check your connection or wake up the server.");
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send Confirmation";
+    }
+  }
+
+  document.getElementById("studentEmail").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") sendConfirmation();
+  });
+
+  function showResult(type, message) {
+    const box = document.getElementById("resultBox");
+    box.className = "result-box " + type;
+    box.textContent = message;
+    box.style.display = "block";
+  }
+
+  function addToHistory(email) {
+    sentHistory.unshift({ email, time: new Date() });
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById("historyList");
+    if (sentHistory.length === 0) {
+      list.innerHTML = '<div class="empty-history">No confirmations sent yet this session.</div>';
+      return;
+    }
+    list.innerHTML = sentHistory.map(item => `
+      <div class="history-item">
+        <div>
+          <div class="history-email">${esc(item.email)}</div>
+          <div class="history-time">${formatTime(item.time)}</div>
+        </div>
+        <span class="history-badge">✓ Sent</span>
+      </div>
+    `).join('');
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatTime(d) {
+    return d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+</script>
+</body>
+</html>
