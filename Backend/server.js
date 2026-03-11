@@ -719,7 +719,7 @@ app.post("/admin/confirm-abu", async (req, res) => {
 
     await sendLexEmail({
       to: reg.email,
-      subject: "🎟️ Lex Xperience 2026 — Your Ticket is Confirmed!",
+      subject: "Lex Xperience 2026 — Your Ticket is Confirmed!",
       html: `
 <!DOCTYPE html>
 <html lang="en">
