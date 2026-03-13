@@ -60,10 +60,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 const innovateUpload = multer({
   storage,
-  limits: { fileSize: 105 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB — pitch deck PDF only
 }).fields([
   { name: "pitchDeck", maxCount: 1 },
-  { name: "videoFile", maxCount: 1 },
 ]);
 
 // MongoDB
@@ -107,7 +106,6 @@ const innovateSchema = new mongoose.Schema({
   useOfFunds:   String,
   videoLink:    String,
   pitchDeckUrl: String,
-  videoFileUrl: String,
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -212,7 +210,6 @@ app.post("/innovate-apply", innovateUpload, async (req, res) => {
     setImmediate(async () => {
       try {
         const pitchDeckFile = req.files && req.files.pitchDeck && req.files.pitchDeck[0];
-        const videoFile     = req.files && req.files.videoFile && req.files.videoFile[0];
         const update = {};
 
         if (pitchDeckFile) {
@@ -222,15 +219,6 @@ app.post("/innovate-apply", innovateUpload, async (req, res) => {
           });
           update.pitchDeckUrl = deckResult.secure_url;
           console.log("✅ Pitch deck uploaded:", deckResult.secure_url);
-        }
-
-        if (videoFile) {
-          const videoResult = await cloudinary.uploader.upload(videoFile.path, {
-            folder: "lex-experience/innovate/videos",
-            resource_type: "video",
-          });
-          update.videoFileUrl = videoResult.secure_url;
-          console.log("✅ Video uploaded:", videoResult.secure_url);
         }
 
         if (Object.keys(update).length > 0) {

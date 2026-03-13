@@ -473,9 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append("useOfFunds",  (document.getElementById("ip-useOfFunds")  || {value:""}).value.trim());
         formData.append("videoLink",   (document.getElementById("ip-videoLink")   || {value:""}).value.trim());
         var deckFile  = (document.getElementById("ip-pitchDeck") || {files:[]}).files[0];
-        var videoFile = (document.getElementById("ip-videoFile") || {files:[]}).files[0];
         if (deckFile)  formData.append("pitchDeck", deckFile);
-        if (videoFile) formData.append("videoFile", videoFile);
 
         var res    = await fetch(BACKEND_URL + "/innovate-apply", { method: "POST", body: formData });
         var result = await res.json();
@@ -602,18 +600,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  var ipVideoInput = document.getElementById("ip-videoFile");
-  if (ipVideoInput) {
-    ipVideoInput.addEventListener("change", function() {
-      var file = this.files[0]; if (!file) return;
-      var err = document.getElementById("ip-err-videoFile");
-      if (file.size > 100 * 1024 * 1024) { if (err) err.textContent = "File too large. Maximum is 100MB."; this.value = ""; return; }
-      if (err) err.textContent = "";
-      document.getElementById("ip-videoName").textContent = file.name;
-      document.getElementById("ip-videoSize").textContent = (file.size/1024/1024).toFixed(2) + " MB";
-      document.getElementById("ip-videoPreview").style.display = "flex";
-    });
-  }
+  
 
   // ---------- WORD COUNTS ----------
   [
