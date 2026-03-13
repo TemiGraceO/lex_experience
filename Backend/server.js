@@ -59,7 +59,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 const innovateUpload = multer({
-  storage,                              // reuse the same diskStorage you already have
+  storage,
   limits: { fileSize: 105 * 1024 * 1024 },
 }).fields([
   { name: "pitchDeck", maxCount: 1 },
@@ -89,7 +89,6 @@ const innovateSchema = new mongoose.Schema({
   name: String,
   reference: { type: String, required: true },
   amount: { type: Number, required: true },
-  // NEW FIELDS
   phone:        String,
   institution:  String,
   course:       String,
@@ -109,24 +108,20 @@ const innovateSchema = new mongoose.Schema({
   videoLink:    String,
   pitchDeckUrl: String,
   videoFileUrl: String,
-
   createdAt: { type: Date, default: Date.now },
 });
 
 const Registration = mongoose.model("Registration", registrationSchema);
 const InnovateRegistration = mongoose.model("InnovateRegistration", innovateSchema);
 
-// ✅ HEALTH CHECK (also wakes up the server on cold start)
+// ✅ HEALTH CHECK
 app.get("/", (req, res) => res.send("✅ Lex Xperience Backend - All Systems Operational!"));
 
 // ✅ CHECK EMAIL DUPLICATE
 app.get("/check-email", async (req, res) => {
   try {
     const { email, type } = req.query;
-
-    if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
-    }
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -137,7 +132,6 @@ app.get("/check-email", async (req, res) => {
       return res.json({ registered: !!existing });
     }
 
-    // Default: check main Lex Xperience registration
     const existing = await Registration.findOne({
       email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
     });
@@ -149,607 +143,105 @@ app.get("/check-email", async (req, res) => {
   }
 });
 
-// Innovate full application + payment
-app.post(
-  "/innovate-apply",
-  upload.fields([
-    { name: "pitchDeck", maxCount: 1 },
-    { name: "videoFile", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const {
-        email,
-        name,
-        reference,
-        amount,
-        phone,
-        institution,
-        course,
-        yearOfStudy,
-        startupName,
-        tagline,
-        website,
-        stage,
-        teamSize,
-        duration,
-        problem,
-        solution,
-        legal,
-        bizModel,
-        traction,
-        useOfFunds,
-        videoLink,
-      } = req.body;
-
-      if (!email || !reference || !amount) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Missing Innovate payment data" });
-      }
-
-      const normalizedEmail = email.trim().toLowerCase();
-
-      // Check duplicate innovate registration
-      const existing = await InnovateRegistration.findOne({
-        email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
-      });
-      if (existing) {
-        return res.status(409).json({
-          success: false,
-          message: "This email has already been registered for Lex Innovate.",
-        });
-      }
-
-      // Basic amount check – hard-coded 20000 to match frontend
-      const paidAmount = Number(amount || 0);
-      if (paidAmount < 20000) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Incorrect payment amount. Expected ₦20,000. Please contact us at lexxperience01@gmail.com.",
-        });
-      }
-
-      // Prepare base document
-      const docData = {
-        email: normalizedEmail,
-        name: name ? name.trim() : "",
-        reference,
-        amount: paidAmount,
-
-        phone: phone || "",
-        institution: institution || "",
-        course: course || "",
-        yearOfStudy: yearOfStudy || "",
-        startupName: startupName || "",
-        tagline: tagline || "",
-        website: website || "",
-        stage: stage || "",
-        teamSize: teamSize || "",
-        duration: duration || "",
-        problem: problem || "",
-        solution: solution || "",
-        legal: legal || "",
-        bizModel: bizModel || "",
-        traction: traction || "",
-        useOfFunds: useOfFunds || "",
-        videoLink: videoLink || "",
-      };
-
-      // Create first, then upload files in background
-      const doc = await InnovateRegistration.create(docData);
-
-      res.json({ success: true, data: doc });
-
-      // Background uploads (non-blocking)
-      setImmediate(async () => {
-        try {
-          const pitchDeckFile =
-            req.files && req.files.pitchDeck && req.files.pitchDeck[0];
-          const videoFile =
-            req.files && req.files.videoFile && req.files.videoFile[0];
-
-          const update = {};
-
-          if (pitchDeckFile) {
-            const deckResult = await cloudinary.uploader.upload(
-              pitchDeckFile.path,
-              {
-                folder: "lex-experience/innovate/decks",
-                resource_type: "raw", // PDF
-              }
-            );
-            update.pitchDeckUrl = deckResult.secure_url;
-          }
-
-          if (videoFile) {
-            const videoResult = await cloudinary.uploader.upload(
-              videoFile.path,
-              {
-                folder: "lex-experience/innovate/videos",
-                resource_type: "video",
-              }
-            );
-            update.videoFileUrl = videoResult.secure_url;
-          }
-
-          if (Object.keys(update).length > 0) {
-            await InnovateRegistration.updateOne({ _id: doc._id }, update);
-            console.log("✅ Innovate files uploaded for", normalizedEmail);
-          }
-
-          // Confirmation email (similar style to /innovate-pay)
-          await sendLexEmail({
-            to: normalizedEmail,
-            subject: "Lex Innovate Pitch 2026 — You're In!",
-            html: `Your Lex Innovate Pitch application has been received and payment confirmed.`, // drop your full HTML here
-          });
-        } catch (bgErr) {
-          console.error("❌ Innovate-apply background error:", bgErr);
-        }
-      });
-    } catch (err) {
-      console.error("❌ Innovate-apply error:", err);
-      if (err.code === 11000) {
-        return res.status(409).json({
-          success: false,
-          message: "This email has already been registered for Lex Innovate.",
-        });
-      }
-      return res.status(500).json({
-        success: false,
-        message: "Innovate application failed. Please try again.",
-      });
-    }
-  }
-);
-
-// ✅ VERIFY PAYMENT WITH PAYSTACK (called before saving registration)
-app.post("/verify-payment", async (req, res) => {
+// ✅ INNOVATE FULL APPLICATION + PAYMENT
+app.post("/innovate-apply", innovateUpload, async (req, res) => {
   try {
-    const { reference, expectedAmount } = req.body;
+    const {
+      email, name, reference, amount,
+      phone, institution, course, yearOfStudy,
+      startupName, tagline, website, stage, teamSize, duration,
+      problem, solution, legal, bizModel, traction, useOfFunds,
+      videoLink,
+    } = req.body;
 
-    if (!reference || !expectedAmount) {
-      return res.status(400).json({ success: false, message: "Missing reference or expected amount" });
-    }
-
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!data.status || data.data.status !== 'success') {
-      return res.status(400).json({ success: false, message: "Payment was not successful." });
-    }
-
-    // Paystack returns amount in kobo — convert to naira
-    const paidAmountNaira = data.data.amount / 100;
-
-    if (paidAmountNaira < Number(expectedAmount)) {
-      console.warn(`⚠️ Amount mismatch on verify: paid ₦${paidAmountNaira}, expected ₦${expectedAmount}`);
-      return res.status(400).json({
-        success: false,
-        message: `Incorrect payment amount. Expected ₦${Number(expectedAmount).toLocaleString()} but received ₦${paidAmountNaira.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
-      });
-    }
-
-    return res.json({ success: true, amount: paidAmountNaira });
-
-  } catch (err) {
-    console.error("❌ verify-payment error:", err);
-    return res.status(500).json({ success: false, message: "Payment verification failed." });
-  }
-});
-
-// 🔥 MAIN REGISTRATION ROUTE
-app.post("/register", upload.single("regNumber"), async (req, res) => {
-  try {
-    const { name, email, school, schoolName, paymentReference, amount, interest } = req.body;
-
-    if (!name || !email || !school || !paymentReference) {
-      return res.status(400).json({ success: false, message: "Missing registration data" });
-    }
-
-    // ✅ SCHOOL NAME VALIDATION for non-ABU students
-    if (school === 'no' && (!schoolName || !schoolName.trim())) {
-      return res.status(400).json({ success: false, message: "School name is required for non-ABU students." });
-    }
-
-    // ✅ AMOUNT VALIDATION — check paid amount matches expected
-    const paidAmount   = Number(amount || 0);
-    const expectedAmount = school === 'yes' ? 5000 : 12000;
-
-    if (paidAmount < expectedAmount) {
-      console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
-      return res.status(400).json({
-        success: false,
-        message: `Incorrect payment amount. Expected ₦${expectedAmount.toLocaleString()} but received ₦${paidAmount.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
-      });
-    }
-
-    // Check for duplicate before saving
-    const normalizedEmail = email.trim().toLowerCase();
-    const existing = await Registration.findOne({
-      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
-    });
-
-    if (existing) {
-      return res.status(409).json({ success: false, message: "This email is already registered." });
-    }
-
-    const registrationData = {
-      name: name.trim(),
-      email: normalizedEmail,
-      school,
-      schoolName: school === 'no' ? (schoolName || '').trim() : '',
-      interest: interest || "",
-      registrationPayment: {
-        reference: paymentReference,
-        amount: Number(amount || 0),
-      },
-    };
-
-    // Save to DB
-    const saved = await Registration.create(registrationData);
-
-    // Respond immediately
-    res.json({ success: true, data: saved });
-
-    // Background tasks (non-blocking)
-    setImmediate(async () => {
-      try {
-        // Cloudinary upload
-        if (req.file) {
-          const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'lex-experience/ids',
-            resource_type: 'auto'
-          });
-          await Registration.updateOne(
-            { _id: saved._id },
-            { file: req.file.filename, fileUrl: result.secure_url }
-          );
-          console.log("✅ Cloudinary done:", result.secure_url);
-        }
-
-        // ✅ ABU STUDENTS — Acknowledgement only (ID needs manual verification)
-        if (registrationData.school === 'yes') {
-          await sendLexEmail({
-            to: normalizedEmail,
-            subject: "Lex Xperience 2026 — Registration Received",
-            html: `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
-<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
-              <div style="display:inline-block;">
-                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
-              </div>
-              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
-            </td>
-          </tr>
-
-          <!-- GOLD DIVIDER -->
-          <tr>
-            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
-          </tr>
-
-          <!-- BODY -->
-          <tr>
-            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
-
-              <!-- STATUS BADGE -->
-              <div style="text-align:center;margin-bottom:28px;">
-                <span style="display:inline-block;background:rgba(247,222,80,0.12);border:1px solid rgba(247,222,80,0.35);color:#f7de50;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">
-                  Registration Received
-                </span>
-              </div>
-
-              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
-                Hi ${registrationData.name},
-              </h1>
-              <p style="margin:0 0 20px;font-size:15px;color:#9ca3af;line-height:1.7;">
-                Thank you for registering for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span>. We've received your details and your ABU ID card is currently under review.
-              </p>
-
-              <!-- NOTICE BOX -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:rgba(247,222,80,0.06);border:1px solid rgba(247,222,80,0.25);border-radius:12px;padding:20px 24px;">
-                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">What happens next?</p>
-                    <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.7;">
-                      Our team will manually verify your ABU ID card. Once verified, you will receive a <strong style="color:#f2e7a2;">separate confirmation email</strong> with your full ticket details. Please ensure the ID you uploaded is clear and legible to avoid delays.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- EVENT DETAILS -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
-                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall,Faculty of Law, ABU Zaria</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
-                If you have any questions, reply to this email or reach us at
-                <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
-              </p>
-            </td>
-          </tr>
-
-          <!-- GOLD DIVIDER -->
-          <tr>
-            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
-              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
-              <p style="margin:0;font-size:12px;color:#6b7280;">
-                Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp;
-                <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-            `,
-          });
-
-        } else {
-          // ✅ NON-ABU STUDENTS — Full ticket confirmation email
-          await sendLexEmail({
-            to: normalizedEmail,
-            subject: "Lex Xperience 2026 — Your Ticket is Confirmed!",
-            html: `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
-<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-          <!-- HEADER -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
-              <div style="display:inline-block;">
-                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
-              </div>
-              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
-            </td>
-          </tr>
-
-          <!-- GOLD DIVIDER -->
-          <tr>
-            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
-          </tr>
-
-          <!-- BODY -->
-          <tr>
-            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
-
-              <!-- STATUS BADGE -->
-              <div style="text-align:center;margin-bottom:28px;">
-                <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">
-                  ✓ Ticket Confirmed
-                </span>
-              </div>
-
-              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
-                You're in, ${registrationData.name}! 
-              </h1>
-              <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
-                Your registration for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span> is confirmed. We can't wait to see you there!
-              </p>
-
-              <!-- TICKET CARD -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-                <tr>
-                  <td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
-                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Ticket</p>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Ticket Type</td>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">General Admission</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${registrationData.registrationPayment.amount}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td>
-                        <td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${registrationData.registrationPayment.reference}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- EVENT DETAILS -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-                <tr>
-                  <td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
-                    <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall,Faculty of Law, ABU Zaria</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- IMPORTANT NOTE -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-                <tr>
-                  <td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
-                    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                      <strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-              <!-- WHATSAPP -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-          <tr><td style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:20px 24px;text-align:center;">
-            <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.1em;">Join the WhatsApp Group</p>
-            <p style="margin:0 0 14px;font-size:13px;color:#9ca3af;line-height:1.6;">Stay updated with event announcements, schedules, and important information.</p>
-            <a href="https://chat.whatsapp.com/IiDHDFP7uIA96hUqtLyns5" style="display:inline-block;background:#25d366;color:#ffffff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;text-decoration:none;">Join WhatsApp Group</a>
-          </td></tr>
-        </table>
-              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">
-                Questions? Reach us at
-                <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a>
-              </p>
-            </td>
-          </tr>
-
-          <!-- GOLD DIVIDER -->
-          <tr>
-            <td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
-              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
-              <p style="margin:0;font-size:12px;color:#6b7280;">
-                Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp;
-                <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-            `,
-          });
-        }
-      } catch (bgErr) {
-        console.error("Background task failed:", bgErr);
-      }
-    });
-
-  } catch (err) {
-    console.error("❌ Register error:", err);
-    // Handle MongoDB duplicate key error
-    if (err.code === 11000) {
-      return res.status(409).json({ success: false, message: "This email is already registered." });
-    }
-    return res.status(500).json({ success: false, message: "Registration failed. Please try again." });
-  }
-});
-
-// ✅ ADMIN — Get all Xperience registrations
-app.get("/admin/registrations", async (req, res) => {
-  try {
-    const data = await Registration.find({}, '-registrationPayment.reference').sort({ createdAt: -1 });
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false });
-  }
-});
-
-// ✅ ADMIN — Get all Innovate registrations
-app.get("/admin/innovate", async (req, res) => {
-  try {
-    const data = await InnovateRegistration.find({}, '-reference').sort({ createdAt: -1 });
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false });
-  }
-});
-// ✅ GET FILE URL
-app.get("/get-file/:email", async (req, res) => {
-  try {
-    const doc = await Registration.findOne({ email: req.params.email });
-    if (doc?.fileUrl) {
-      res.json({ success: true, fileUrl: doc.fileUrl });
-    } else {
-      res.json({ success: false, message: "No file found" });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Error" });
-  }
-});
-
-// 🔥 LEX INNOVATE ROUTE
-app.post("/innovate-pay", async (req, res) => {
-  try {
-    const { email, name, reference, amount } = req.body;
-
-    if (!email || !reference) {
+    if (!email || !reference || !amount) {
       return res.status(400).json({ success: false, message: "Missing Innovate payment data" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check for duplicate innovate registration
+    // Check duplicate
     const existing = await InnovateRegistration.findOne({
-      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
     });
-
     if (existing) {
-      return res.status(409).json({ success: false, message: "This email has already been registered for Lex Innovate." });
+      return res.status(409).json({
+        success: false,
+        message: "This email has already been registered for Lex Innovate.",
+      });
     }
 
-    const doc = await InnovateRegistration.create({
+    // Amount check
+    const paidAmount = Number(amount || 0);
+    if (paidAmount < 20000) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect payment amount. Expected ₦20,000. Please contact us at lexxperience01@gmail.com.",
+      });
+    }
+
+    const docData = {
       email: normalizedEmail,
       name: name ? name.trim() : "",
       reference,
-      amount: Number(amount || 0),
-    });
+      amount: paidAmount,
+      phone: phone || "",
+      institution: institution || "",
+      course: course || "",
+      yearOfStudy: yearOfStudy || "",
+      startupName: startupName || "",
+      tagline: tagline || "",
+      website: website || "",
+      stage: stage || "",
+      teamSize: teamSize || "",
+      duration: duration || "",
+      problem: problem || "",
+      solution: solution || "",
+      legal: legal || "",
+      bizModel: bizModel || "",
+      traction: traction || "",
+      useOfFunds: useOfFunds || "",
+      videoLink: videoLink || "",
+    };
 
+    // Save to DB immediately, respond, then do uploads + email in background
+    const doc = await InnovateRegistration.create(docData);
     res.json({ success: true, data: doc });
 
-    // Send confirmation email (non-blocking)
-    setImmediate(() => {
-      sendLexEmail({
-        to: normalizedEmail,
-        subject: "Lex Innovate Pitch 2026 — You're In!",
-        html: `
+    // ---------- BACKGROUND: uploads + confirmation email ----------
+    setImmediate(async () => {
+      try {
+        const pitchDeckFile = req.files && req.files.pitchDeck && req.files.pitchDeck[0];
+        const videoFile     = req.files && req.files.videoFile && req.files.videoFile[0];
+        const update = {};
+
+        if (pitchDeckFile) {
+          const deckResult = await cloudinary.uploader.upload(pitchDeckFile.path, {
+            folder: "lex-experience/innovate/decks",
+            resource_type: "raw",
+          });
+          update.pitchDeckUrl = deckResult.secure_url;
+          console.log("✅ Pitch deck uploaded:", deckResult.secure_url);
+        }
+
+        if (videoFile) {
+          const videoResult = await cloudinary.uploader.upload(videoFile.path, {
+            folder: "lex-experience/innovate/videos",
+            resource_type: "video",
+          });
+          update.videoFileUrl = videoResult.secure_url;
+          console.log("✅ Video uploaded:", videoResult.secure_url);
+        }
+
+        if (Object.keys(update).length > 0) {
+          await InnovateRegistration.updateOne({ _id: doc._id }, update);
+        }
+
+        // ✅ CONFIRMATION EMAIL
+        await sendLexEmail({
+          to: normalizedEmail,
+          subject: "Lex Innovate Pitch 2026 — You're In!",
+          html: `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Innovate 2026</title></head>
@@ -786,10 +278,10 @@ app.post("/innovate-pay", async (req, res) => {
               </div>
 
               <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">
-                You're a Pitcher, ${doc.name || 'Innovator'}! 
+                You're a Pitcher, ${doc.name || 'Innovator'}!
               </h1>
               <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
-                Your registration for the <span style="color:#f2e7a2;font-weight:600;">Lex Innovate Pitch</span> is confirmed. Get ready to present your big idea to industry leaders, investors, and policy stakeholders.
+                Your application for the <span style="color:#f2e7a2;font-weight:600;">Lex Innovate Pitch</span> has been received and your payment confirmed. Get ready to present your big idea to industry leaders, investors, and policy stakeholders.
               </p>
 
               <!-- TICKET CARD -->
@@ -799,12 +291,16 @@ app.post("/innovate-pay", async (req, res) => {
                     <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Your Registration</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Startup</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">${doc.startupName || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Event</td>
                         <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate Pitch — Day 4</td>
                       </tr>
                       <tr>
                         <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td>
-                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${Number(amount || 0)}</td>
+                        <td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${paidAmount.toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td>
@@ -823,11 +319,15 @@ app.post("/innovate-pay", async (req, res) => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td>
-                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Day 4 — Lex Innovate</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">April 3rd, 2026 — Day 4</td>
                       </tr>
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td>
                         <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Selection</td>
+                        <td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Finalists will be contacted via email</td>
                       </tr>
                     </table>
                   </td>
@@ -839,8 +339,19 @@ app.post("/innovate-pay", async (req, res) => {
                 <tr>
                   <td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
                     <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                      <strong style="color:#f2e7a2;">Tip:</strong> Prepare your pitch deck and a clear summary of your solution. Present this confirmation at the Innovate Pitch registration desk on the day.
+                      <strong style="color:#f2e7a2;">Tip:</strong> If selected as a finalist, you'll be required to submit a pitch deck and attend a mandatory prep session before the live pitch on April 3rd. Keep an eye on your inbox.
                     </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- WHATSAPP -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:20px 24px;text-align:center;">
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.1em;">Join the WhatsApp Group</p>
+                    <p style="margin:0 0 14px;font-size:13px;color:#9ca3af;line-height:1.6;">Stay updated with event announcements, schedules, and important information.</p>
+                    <a href="https://chat.whatsapp.com/IiDHDFP7uIA96hUqtLyns5" style="display:inline-block;background:#25d366;color:#ffffff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;text-decoration:none;">Join WhatsApp Group</a>
                   </td>
                 </tr>
               </table>
@@ -862,7 +373,7 @@ app.post("/innovate-pay", async (req, res) => {
             <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
               <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
               <p style="margin:0;font-size:12px;color:#6b7280;">
-                Mahdi Hall,Faculty of Law, ABU Zaria &nbsp;|&nbsp;
+                Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp;
                 <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a>
               </p>
             </td>
@@ -873,8 +384,126 @@ app.post("/innovate-pay", async (req, res) => {
     </tr>
   </table>
 </body>
-</html>
-        `,
+</html>`,
+        });
+
+      } catch (bgErr) {
+        console.error("❌ Innovate-apply background error:", bgErr);
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Innovate-apply error:", err);
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This email has already been registered for Lex Innovate.",
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Innovate application failed. Please try again.",
+    });
+  }
+});
+
+// 🔥 LEX INNOVATE ROUTE (legacy — kept for reference)
+app.post("/innovate-pay", async (req, res) => {
+  try {
+    const { email, name, reference, amount } = req.body;
+
+    if (!email || !reference) {
+      return res.status(400).json({ success: false, message: "Missing Innovate payment data" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existing = await InnovateRegistration.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
+    });
+
+    if (existing) {
+      return res.status(409).json({ success: false, message: "This email has already been registered for Lex Innovate." });
+    }
+
+    const doc = await InnovateRegistration.create({
+      email: normalizedEmail,
+      name: name ? name.trim() : "",
+      reference,
+      amount: Number(amount || 0),
+    });
+
+    res.json({ success: true, data: doc });
+
+    setImmediate(() => {
+      sendLexEmail({
+        to: normalizedEmail,
+        subject: "Lex Innovate Pitch 2026 — You're In!",
+        html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Innovate 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+              <div style="display:inline-block;">
+                <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+            </td>
+          </tr>
+          <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+          <tr>
+            <td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+              <div style="text-align:center;margin-bottom:28px;">
+                <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">✓ Innovate Pitch Confirmed</span>
+              </div>
+              <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">You're a Pitcher, ${doc.name || 'Innovator'}!</h1>
+              <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">Your registration for the <span style="color:#f2e7a2;font-weight:600;">Lex Innovate Pitch</span> is confirmed. Get ready to present your big idea to industry leaders, investors, and policy stakeholders.</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr><td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+                  <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Your Registration</p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate Pitch — Day 4</td></tr>
+                    <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${Number(amount || 0)}</td></tr>
+                    <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td><td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${reference}</td></tr>
+                  </table>
+                </td></tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+                  <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Next Steps</p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Day 4 — Lex Innovate</td></tr>
+                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+                  </table>
+                </td></tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr><td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
+                  <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;"><strong style="color:#f2e7a2;">Tip:</strong> Prepare your pitch deck and a clear summary of your solution. Present this confirmation at the Innovate Pitch registration desk on the day.</p>
+                </td></tr>
+              </table>
+              <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">Questions? Reach us at <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a></p>
+            </td>
+          </tr>
+          <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+          <tr>
+            <td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;">Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp; <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
       });
     });
 
@@ -887,12 +516,280 @@ app.post("/innovate-pay", async (req, res) => {
   }
 });
 
+// ✅ VERIFY PAYMENT WITH PAYSTACK
+app.post("/verify-payment", async (req, res) => {
+  try {
+    const { reference, expectedAmount } = req.body;
+    if (!reference || !expectedAmount) {
+      return res.status(400).json({ success: false, message: "Missing reference or expected amount" });
+    }
+
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    if (!data.status || data.data.status !== 'success') {
+      return res.status(400).json({ success: false, message: "Payment was not successful." });
+    }
+
+    const paidAmountNaira = data.data.amount / 100;
+    if (paidAmountNaira < Number(expectedAmount)) {
+      console.warn(`⚠️ Amount mismatch: paid ₦${paidAmountNaira}, expected ₦${expectedAmount}`);
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect payment amount. Expected ₦${Number(expectedAmount).toLocaleString()} but received ₦${paidAmountNaira.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
+      });
+    }
+
+    return res.json({ success: true, amount: paidAmountNaira });
+
+  } catch (err) {
+    console.error("❌ verify-payment error:", err);
+    return res.status(500).json({ success: false, message: "Payment verification failed." });
+  }
+});
+
+// ✅ MAIN REGISTRATION ROUTE
+app.post("/register", upload.single("regNumber"), async (req, res) => {
+  try {
+    const { name, email, school, schoolName, paymentReference, amount, interest } = req.body;
+
+    if (!name || !email || !school || !paymentReference) {
+      return res.status(400).json({ success: false, message: "Missing registration data" });
+    }
+
+    if (school === 'no' && (!schoolName || !schoolName.trim())) {
+      return res.status(400).json({ success: false, message: "School name is required for non-ABU students." });
+    }
+
+    const paidAmount     = Number(amount || 0);
+    const expectedAmount = school === 'yes' ? 5000 : 12000;
+
+    if (paidAmount < expectedAmount) {
+      console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect payment amount. Expected ₦${expectedAmount.toLocaleString()} but received ₦${paidAmount.toLocaleString()}. Please contact us at lexxperience01@gmail.com.`,
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await Registration.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
+    });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "This email is already registered." });
+    }
+
+    const registrationData = {
+      name: name.trim(),
+      email: normalizedEmail,
+      school,
+      schoolName: school === 'no' ? (schoolName || '').trim() : '',
+      interest: interest || "",
+      registrationPayment: {
+        reference: paymentReference,
+        amount: Number(amount || 0),
+      },
+    };
+
+    const saved = await Registration.create(registrationData);
+    res.json({ success: true, data: saved });
+
+    setImmediate(async () => {
+      try {
+        if (req.file) {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'lex-experience/ids',
+            resource_type: 'auto'
+          });
+          await Registration.updateOne(
+            { _id: saved._id },
+            { file: req.file.filename, fileUrl: result.secure_url }
+          );
+          console.log("✅ Cloudinary done:", result.secure_url);
+        }
+
+        if (registrationData.school === 'yes') {
+          await sendLexEmail({
+            to: normalizedEmail,
+            subject: "Lex Xperience 2026 — Registration Received",
+            html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+          <div style="display:inline-block;">
+            <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+          </div>
+          <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <span style="display:inline-block;background:rgba(247,222,80,0.12);border:1px solid rgba(247,222,80,0.35);color:#f7de50;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">Registration Received</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">Hi ${registrationData.name},</h1>
+          <p style="margin:0 0 20px;font-size:15px;color:#9ca3af;line-height:1.7;">Thank you for registering for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span>. We've received your details and your ABU ID card is currently under review.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr><td style="background:rgba(247,222,80,0.06);border:1px solid rgba(247,222,80,0.25);border-radius:12px;padding:20px 24px;">
+              <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">What happens next?</p>
+              <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.7;">Our team will manually verify your ABU ID card. Once verified, you will receive a <strong style="color:#f2e7a2;">separate confirmation email</strong> with your full ticket details. Please ensure the ID you uploaded is clear and legible to avoid delays.</p>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+              <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">Questions? Reach us at <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+          <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#6b7280;">Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp; <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+          });
+
+        } else {
+          await sendLexEmail({
+            to: normalizedEmail,
+            subject: "Lex Xperience 2026 — Your Ticket is Confirmed!",
+            html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lex Xperience 2026</title></head>
+<body style="margin:0;padding:0;background-color:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050608;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background:linear-gradient(135deg,#0e1015 0%,#151826 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+          <div style="display:inline-block;">
+            <span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;letter-spacing:0.06em;color:#f7de50;">Xperience</span>
+          </div>
+          <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">✓ Ticket Confirmed</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">You're in, ${registrationData.name}!</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">Your registration for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span> is confirmed. We can't wait to see you there!</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+              <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎟️ Your Ticket</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Ticket Type</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">General Admission</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${registrationData.registrationPayment.amount.toLocaleString()}</td></tr>
+                <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td><td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${registrationData.registrationPayment.reference}</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
+              <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:rgba(247,222,80,0.06);border-left:3px solid #f7de50;border-radius:0 8px 8px 0;padding:14px 18px;">
+              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;"><strong style="color:#f2e7a2;">Important:</strong> Please bring this confirmation (printed or on your phone) to registration on the day.</p>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr><td style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:20px 24px;text-align:center;">
+              <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.1em;">Join the WhatsApp Group</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#9ca3af;line-height:1.6;">Stay updated with event announcements, schedules, and important information.</p>
+              <a href="https://chat.whatsapp.com/IiDHDFP7uIA96hUqtLyns5" style="display:inline-block;background:#25d366;color:#ffffff;font-weight:700;font-size:14px;padding:10px 24px;border-radius:8px;text-decoration:none;">Join WhatsApp Group</a>
+            </td></tr>
+          </table>
+          <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">Questions? Reach us at <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+          <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#6b7280;">Mahdi Hall, Faculty of Law, ABU Zaria &nbsp;|&nbsp; <a href="mailto:lexxperience01@gmail.com" style="color:#9ca3af;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+          });
+        }
+      } catch (bgErr) {
+        console.error("Background task failed:", bgErr);
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Register error:", err);
+    if (err.code === 11000) {
+      return res.status(409).json({ success: false, message: "This email is already registered." });
+    }
+    return res.status(500).json({ success: false, message: "Registration failed. Please try again." });
+  }
+});
+
+// ✅ ADMIN — Get all Xperience registrations
+app.get("/admin/registrations", async (req, res) => {
+  try {
+    const data = await Registration.find({}, '-registrationPayment.reference').sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// ✅ ADMIN — Get all Innovate registrations
+app.get("/admin/innovate", async (req, res) => {
+  try {
+    const data = await InnovateRegistration.find({}, '-reference').sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// ✅ GET FILE URL
+app.get("/get-file/:email", async (req, res) => {
+  try {
+    const doc = await Registration.findOne({ email: req.params.email });
+    if (doc?.fileUrl) {
+      res.json({ success: true, fileUrl: doc.fileUrl });
+    } else {
+      res.json({ success: false, message: "No file found" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error" });
+  }
+});
+
 // ✅ MANUAL — Send ABU confirmation email after ID verification
 app.post("/admin/confirm-abu", async (req, res) => {
   try {
     const { email, adminKey } = req.body;
-
-    // Simple security check
     if (adminKey !== process.env.ADMIN_KEY) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
