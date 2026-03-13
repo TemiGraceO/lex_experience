@@ -58,6 +58,13 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const innovateUpload = multer({
+  storage,                              // reuse the same diskStorage you already have
+  limits: { fileSize: 105 * 1024 * 1024 },
+}).fields([
+  { name: "pitchDeck", maxCount: 1 },
+  { name: "videoFile", maxCount: 1 },
+]);
 
 // MongoDB
 mongoose.connect(process.env.MONGODB_URI)
@@ -82,6 +89,27 @@ const innovateSchema = new mongoose.Schema({
   name: String,
   reference: { type: String, required: true },
   amount: { type: Number, required: true },
+  // NEW FIELDS
+  phone:        String,
+  institution:  String,
+  course:       String,
+  yearOfStudy:  String,
+  startupName:  String,
+  tagline:      String,
+  website:      String,
+  stage:        String,
+  teamSize:     String,
+  duration:     String,
+  problem:      String,
+  solution:     String,
+  legal:        String,
+  bizModel:     String,
+  traction:     String,
+  useOfFunds:   String,
+  videoLink:    String,
+  pitchDeckUrl: String,
+  videoFileUrl: String,
+
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -120,6 +148,162 @@ app.get("/check-email", async (req, res) => {
     return res.status(500).json({ success: false, message: "Check failed" });
   }
 });
+
+// Innovate full application + payment
+app.post(
+  "/innovate-apply",
+  upload.fields([
+    { name: "pitchDeck", maxCount: 1 },
+    { name: "videoFile", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const {
+        email,
+        name,
+        reference,
+        amount,
+        phone,
+        institution,
+        course,
+        yearOfStudy,
+        startupName,
+        tagline,
+        website,
+        stage,
+        teamSize,
+        duration,
+        problem,
+        solution,
+        legal,
+        bizModel,
+        traction,
+        useOfFunds,
+        videoLink,
+      } = req.body;
+
+      if (!email || !reference || !amount) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing Innovate payment data" });
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Check duplicate innovate registration
+      const existing = await InnovateRegistration.findOne({
+        email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
+      });
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: "This email has already been registered for Lex Innovate.",
+        });
+      }
+
+      // Basic amount check – hard-coded 20000 to match frontend
+      const paidAmount = Number(amount || 0);
+      if (paidAmount < 20000) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Incorrect payment amount. Expected ₦20,000. Please contact us at lexxperience01@gmail.com.",
+        });
+      }
+
+      // Prepare base document
+      const docData = {
+        email: normalizedEmail,
+        name: name ? name.trim() : "",
+        reference,
+        amount: paidAmount,
+
+        phone: phone || "",
+        institution: institution || "",
+        course: course || "",
+        yearOfStudy: yearOfStudy || "",
+        startupName: startupName || "",
+        tagline: tagline || "",
+        website: website || "",
+        stage: stage || "",
+        teamSize: teamSize || "",
+        duration: duration || "",
+        problem: problem || "",
+        solution: solution || "",
+        legal: legal || "",
+        bizModel: bizModel || "",
+        traction: traction || "",
+        useOfFunds: useOfFunds || "",
+        videoLink: videoLink || "",
+      };
+
+      // Create first, then upload files in background
+      const doc = await InnovateRegistration.create(docData);
+
+      res.json({ success: true, data: doc });
+
+      // Background uploads (non-blocking)
+      setImmediate(async () => {
+        try {
+          const pitchDeckFile =
+            req.files && req.files.pitchDeck && req.files.pitchDeck[0];
+          const videoFile =
+            req.files && req.files.videoFile && req.files.videoFile[0];
+
+          const update = {};
+
+          if (pitchDeckFile) {
+            const deckResult = await cloudinary.uploader.upload(
+              pitchDeckFile.path,
+              {
+                folder: "lex-experience/innovate/decks",
+                resource_type: "raw", // PDF
+              }
+            );
+            update.pitchDeckUrl = deckResult.secure_url;
+          }
+
+          if (videoFile) {
+            const videoResult = await cloudinary.uploader.upload(
+              videoFile.path,
+              {
+                folder: "lex-experience/innovate/videos",
+                resource_type: "video",
+              }
+            );
+            update.videoFileUrl = videoResult.secure_url;
+          }
+
+          if (Object.keys(update).length > 0) {
+            await InnovateRegistration.updateOne({ _id: doc._id }, update);
+            console.log("✅ Innovate files uploaded for", normalizedEmail);
+          }
+
+          // Confirmation email (similar style to /innovate-pay)
+          await sendLexEmail({
+            to: normalizedEmail,
+            subject: "Lex Innovate Pitch 2026 — You're In!",
+            html: `Your Lex Innovate Pitch application has been received and payment confirmed.`, // drop your full HTML here
+          });
+        } catch (bgErr) {
+          console.error("❌ Innovate-apply background error:", bgErr);
+        }
+      });
+    } catch (err) {
+      console.error("❌ Innovate-apply error:", err);
+      if (err.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: "This email has already been registered for Lex Innovate.",
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: "Innovate application failed. Please try again.",
+      });
+    }
+  }
+);
 
 // ✅ VERIFY PAYMENT WITH PAYSTACK (called before saving registration)
 app.post("/verify-payment", async (req, res) => {
