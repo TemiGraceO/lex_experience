@@ -8,6 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>Lex Xperience | Law, Innovation & Excellence</title>
   <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="innovate-additions.css" />
   <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -398,22 +399,382 @@
 
             <div class="form-status-box" id="innovateStatusBox" style="display:none;"></div>
 
-            <div class="form-group" id="innovatePayGroup" style="display:none;">
-              <button type="button" class="btn btn-primary btn-block" id="innovateOnlyPayBtn">
-                Pay ₦20,000 for Lex Innovate
-              </button>
-              <p class="form-footnote">You'll receive a confirmation email after payment.</p>
-            </div>
-
             <button type="button" class="btn btn-outline btn-block" id="innovateVerifyBtn" style="margin-top:0.5rem;">
               Verify & Continue
             </button>
           </div>
-
-          <div class="post-payment" id="innovateOnlyThanks" style="display:none;">
-            You're in! Your Lex Innovate registration is confirmed. Check your email for details.
+ 
+          <!-- Step 2: Application Form (shown after payment) -->
+          <div id="innovateAppForm" style="display:none;">
+ 
+            <!-- Progress Bar -->
+            <div class="innovate-progress" id="innovateProgress">
+              <div class="ip-steps">
+                <div class="ip-line"><div class="ip-fill" id="ipFill" style="width:0%"></div></div>
+                <div class="ip-dot active" id="ip-dot-1"><span>A</span></div>
+                <div class="ip-dot" id="ip-dot-2"><span>B</span></div>
+                <div class="ip-dot" id="ip-dot-3"><span>C</span></div>
+                <div class="ip-dot" id="ip-dot-4"><span>D</span></div>
+                <div class="ip-dot" id="ip-dot-5"><span>E</span></div>
+              </div>
+              <div class="ip-labels">
+                <span class="ip-label active" id="ip-label-1">Personal</span>
+                <span class="ip-label" id="ip-label-2">Startup</span>
+                <span class="ip-label" id="ip-label-3">Pitch</span>
+                <span class="ip-label" id="ip-label-4">Materials</span>
+                <span class="ip-label" id="ip-label-5">Declare</span>
+              </div>
+            </div>
+ 
+            <!-- PART A -->
+            <div class="ip-panel active" id="ip-step-1">
+              <div class="ip-section-head">
+                <div class="ip-badge">A</div>
+                <div>
+                  <h4>Personal Details</h4>
+                  <p>Tell us about yourself</p>
+                </div>
+              </div>
+              <div class="ip-grid">
+                <div class="form-group">
+                  <label for="ip-fullName">Full Name<span>*</span></label>
+                  <input type="text" id="ip-fullName" placeholder="e.g. Grace Olorunfemi" autocomplete="name" />
+                  <small class="error-message" id="ip-err-fullName"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-email">Email Address<span>*</span></label>
+                  <input type="email" id="ip-email" placeholder="e.g. grace@example.com" autocomplete="email" />
+                  <small class="error-message" id="ip-err-email"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-phone">Phone Number (WhatsApp-enabled)<span>*</span></label>
+                  <input type="tel" id="ip-phone" placeholder="e.g. 08012345678" autocomplete="tel" />
+                  <small class="error-message" id="ip-err-phone"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-institution">Institution / University<span>*</span></label>
+                  <input type="text" id="ip-institution" placeholder="e.g. Ahmadu Bello University" autocomplete="organization" />
+                  <small class="error-message" id="ip-err-institution"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-course">Course of Study<span>*</span></label>
+                  <input type="text" id="ip-course" placeholder="e.g. Law (LL.B)" />
+                  <small class="error-message" id="ip-err-course"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-year">Year of Study<span>*</span></label>
+                  <select id="ip-year">
+                    <option value="">Select year</option>
+                    <option value="1">Year 1</option>
+                    <option value="2">Year 2</option>
+                    <option value="3">Year 3</option>
+                    <option value="4">Year 4</option>
+                    <option value="5">Year 5</option>
+                    <option value="6">Year 6</option>
+                    <option value="graduate">Graduate / Postgraduate</option>
+                    <option value="young-prof">Young Professional (not a student)</option>
+                  </select>
+                  <small class="error-message" id="ip-err-year"></small>
+                </div>
+              </div>
+              <div class="ip-nav">
+                <span></span>
+                <button type="button" class="btn btn-primary" onclick="ipNext(1)">Next &rarr;</button>
+              </div>
+            </div>
+ 
+            <!-- PART B -->
+            <div class="ip-panel" id="ip-step-2">
+              <div class="ip-section-head">
+                <div class="ip-badge">B</div>
+                <div>
+                  <h4>Startup Information</h4>
+                  <p>Tell us about your venture</p>
+                </div>
+              </div>
+              <div class="ip-grid ip-grid-1">
+                <div class="form-group">
+                  <label for="ip-startupName">Startup Name<span>*</span></label>
+                  <input type="text" id="ip-startupName" placeholder="e.g. LexTrack" />
+                  <small class="error-message" id="ip-err-startupName"></small>
+                </div>
+                <div class="form-group">
+                  <label for="ip-tagline">One-line Description<span>*</span>
+                    <span class="field-hint">Describe what your startup does in one sentence (max 20 words)</span>
+                  </label>
+                  <input type="text" id="ip-tagline" placeholder="e.g. We help SMEs navigate Nigerian tax compliance through AI-powered automation." />
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-tagline"></small>
+                    <span class="ip-word-count" id="ip-wc-tagline">0 / 20 words</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="ip-website">Website or Social Media Link
+                    <span class="field-hint">Optional — your website, LinkedIn, Instagram, etc.</span>
+                  </label>
+                  <input type="url" id="ip-website" placeholder="https://yourstartup.com" />
+                  <small class="error-message" id="ip-err-website"></small>
+                </div>
+                <div class="form-group">
+                  <label>Stage<span>*</span></label>
+                  <div class="ip-option-group ip-option-col">
+                    <label class="ip-pill"><input type="radio" name="ip-stage" value="idea" /> Idea</label>
+                    <label class="ip-pill"><input type="radio" name="ip-stage" value="prototype" /> Prototype</label>
+                    <label class="ip-pill"><input type="radio" name="ip-stage" value="mvp" /> MVP</label>
+                    <label class="ip-pill"><input type="radio" name="ip-stage" value="revenue" /> Revenue-generating</label>
+                  </div>
+                  <small class="error-message" id="ip-err-stage"></small>
+                </div>
+                <div class="ip-grid ip-grid-2" style="padding:0; border:none; background:none;">
+                  <div class="form-group">
+                    <label for="ip-teamSize">Team Size (including founder)<span>*</span></label>
+                    <select id="ip-teamSize">
+                      <option value="">Select size</option>
+                      <option value="1">Solo founder</option>
+                      <option value="2">2 people</option>
+                      <option value="3">3 people</option>
+                      <option value="4">4 people</option>
+                      <option value="5+">5 or more</option>
+                    </select>
+                    <small class="error-message" id="ip-err-teamSize"></small>
+                  </div>
+                  <div class="form-group">
+                    <label>How long have you been working on this?<span>*</span></label>
+                    <div class="ip-option-group ip-option-col">
+                      <label class="ip-pill"><input type="radio" name="ip-duration" value="<3m" /> Less than 3 months</label>
+                      <label class="ip-pill"><input type="radio" name="ip-duration" value="3-6m" /> 3–6 months</label>
+                      <label class="ip-pill"><input type="radio" name="ip-duration" value="6-12m" /> 6–12 months</label>
+                      <label class="ip-pill"><input type="radio" name="ip-duration" value="1y+" /> 1+ year</label>
+                    </div>
+                    <small class="error-message" id="ip-err-duration"></small>
+                  </div>
+                </div>
+              </div>
+              <div class="ip-nav">
+                <button type="button" class="btn btn-outline" onclick="ipPrev(2)">&larr; Back</button>
+                <button type="button" class="btn btn-primary" onclick="ipNext(2)">Next &rarr;</button>
+              </div>
+            </div>
+ 
+            <!-- PART C -->
+            <div class="ip-panel" id="ip-step-3">
+              <div class="ip-section-head">
+                <div class="ip-badge">C</div>
+                <div>
+                  <h4>The Pitch (Written)</h4>
+                  <p>Be clear, specific, and compelling. Judges value legal awareness</p>
+                </div>
+              </div>
+              <div class="ip-grid ip-grid-1">
+ 
+                <div class="form-group">
+                  <label for="ip-problem">The Problem<span>*</span>
+                    <span class="field-hint">What specific problem are you solving, and who experiences it? (max 150 words)</span>
+                  </label>
+                  <textarea id="ip-problem" rows="4" placeholder="Describe the problem you're solving and who is affected..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-problem"></small>
+                    <span class="ip-word-count" id="ip-wc-problem">0 / 150 words</span>
+                  </div>
+                </div>
+ 
+                <div class="ip-divider"></div>
+ 
+                <div class="form-group">
+                  <label for="ip-solution">Your Solution<span>*</span>
+                    <span class="field-hint">How does your product or service solve this problem? What makes your approach different? (max 200 words)</span>
+                  </label>
+                  <textarea id="ip-solution" rows="5" placeholder="Describe your solution and what sets it apart..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-solution"></small>
+                    <span class="ip-word-count" id="ip-wc-solution">0 / 200 words</span>
+                  </div>
+                </div>
+ 
+                <div class="ip-divider"></div>
+ 
+                <div class="form-group">
+                  <label for="ip-legal">Legal & Regulatory Angle<span>*</span>
+                    <span class="field-hint">What laws, regulations, or compliance frameworks are relevant to your solution? How does your product address or navigate them? (max 150 words)</span>
+                  </label>
+                  <textarea id="ip-legal" rows="4" placeholder="e.g. NDPR compliance, CBN fintech regulations, IP frameworks..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-legal"></small>
+                    <span class="ip-word-count" id="ip-wc-legal">0 / 150 words</span>
+                  </div>
+                </div>
+ 
+                <div class="ip-divider"></div>
+ 
+                <div class="form-group">
+                  <label for="ip-bizModel">Business Model<span>*</span>
+                    <span class="field-hint">How do you make money or plan to make money? (max 100 words)</span>
+                  </label>
+                  <textarea id="ip-bizModel" rows="3" placeholder="e.g. SaaS subscription, transaction fees, freemium with paid tiers..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-bizModel"></small>
+                    <span class="ip-word-count" id="ip-wc-bizModel">0 / 100 words</span>
+                  </div>
+                </div>
+ 
+                <div class="ip-divider"></div>
+ 
+                <div class="form-group">
+                  <label for="ip-traction">Traction<span>*</span>
+                    <span class="field-hint">What progress have you made so far? Users, revenue, pilots, partnerships, LOIs, awards? (max 100 words)</span>
+                  </label>
+                  <textarea id="ip-traction" rows="3" placeholder="e.g. 200 beta users, 3 paying clients, finalist at XYZ competition..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-traction"></small>
+                    <span class="ip-word-count" id="ip-wc-traction">0 / 100 words</span>
+                  </div>
+                </div>
+ 
+                <div class="ip-divider"></div>
+ 
+                <div class="form-group">
+                  <label for="ip-useOfFunds">Use of Funds<span>*</span>
+                    <span class="field-hint">If you win &#8358;1,000,000, how would you allocate it? (max 100 words)</span>
+                  </label>
+                  <textarea id="ip-useOfFunds" rows="3" placeholder="e.g. 40% product development, 30% marketing, 20% legal compliance, 10% operations..."></textarea>
+                  <div class="field-count-row">
+                    <small class="error-message" id="ip-err-useOfFunds"></small>
+                    <span class="ip-word-count" id="ip-wc-useOfFunds">0 / 100 words</span>
+                  </div>
+                </div>
+ 
+              </div>
+              <div class="ip-nav">
+                <button type="button" class="btn btn-outline" onclick="ipPrev(3)">&larr; Back</button>
+                <button type="button" class="btn btn-primary" onclick="ipNext(3)">Next &rarr;</button>
+              </div>
+            </div>
+ 
+            <!-- PART D -->
+            <div class="ip-panel" id="ip-step-4">
+              <div class="ip-section-head">
+                <div class="ip-badge">D</div>
+                <div>
+                  <h4>Supporting Materials</h4>
+                  <p>Optional at application. Mandatory for selected finalists</p>
+                </div>
+              </div>
+ 
+              <div class="ip-info-note">
+                Both fields are optional now, but selected finalists must submit a pitch deck before the event. A video submission significantly strengthens your application.
+              </div>
+ 
+              <div class="ip-grid ip-grid-1">
+                <div class="form-group">
+                  <label>Pitch Deck
+                    <span class="field-hint">PDF only, max 10 slides, max 10 MB — Optional at this stage</span>
+                  </label>
+                  <div class="file-upload-container">
+                    <input type="file" id="ip-pitchDeck" accept=".pdf" />
+                    <div class="file-upload-label">
+                      <span class="file-upload-icon">&#128196;</span>
+                      <span class="file-upload-text">Click to upload your pitch deck (PDF)</span>
+                      <span class="file-upload-hint">Max 10 slides &bull; Max 10 MB</span>
+                    </div>
+                  </div>
+                  <div class="id-preview" id="ip-deckPreview" style="display:none;">
+                    <img id="ip-deckPreviewImg" alt="Deck preview" src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:40px;height:40px;object-fit:contain;" />
+                    <div class="file-meta">
+                      <div class="file-name" id="ip-deckName"></div>
+                      <div id="ip-deckSize" style="font-size:0.75rem;color:var(--text-muted);"></div>
+                    </div>
+                  </div>
+                  <small class="error-message" id="ip-err-pitchDeck"></small>
+                </div>
+ 
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label>90-Second Explainer Video
+                    <span class="field-hint">Optional but strongly recommended — upload a file or paste a link below</span>
+                  </label>
+                  <div class="file-upload-container">
+                    <input type="file" id="ip-videoFile" accept="video/mp4,video/quicktime,video/webm" />
+                    <div class="file-upload-label">
+                      
+                      <span class="file-upload-text">Click to upload your video</span>
+                      <span class="file-upload-hint">MP4, MOV, WebM &bull; Max 100 MB</span>
+                    </div>
+                  </div>
+                  <div class="id-preview" id="ip-videoPreview" style="display:none;">
+                    <img alt="Video preview" src="https://cdn-icons-png.flaticon.com/512/149/149125.png" style="width:40px;height:40px;object-fit:contain;" />
+                    <div class="file-meta">
+                      <div class="file-name" id="ip-videoName"></div>
+                      <div id="ip-videoSize" style="font-size:0.75rem;color:var(--text-muted);"></div>
+                    </div>
+                  </div>
+                  <small class="error-message" id="ip-err-videoFile"></small>
+                </div>
+ 
+                <div class="form-group">
+                  <label for="ip-videoLink">Or paste a video link (YouTube, Google Drive, Loom, etc.)</label>
+                  <input type="url" id="ip-videoLink" placeholder="https://youtu.be/..." />
+                </div>
+              </div>
+ 
+              <div class="ip-nav">
+                <button type="button" class="btn btn-outline" onclick="ipPrev(4)">&larr; Back</button>
+                <button type="button" class="btn btn-primary" onclick="ipNext(4)">Next &rarr;</button>
+              </div>
+            </div>
+ 
+            <!-- PART E -->
+            <div class="ip-panel" id="ip-step-5">
+              <div class="ip-section-head">
+                <div class="ip-badge">E</div>
+                <div>
+                  <h4>Declaration</h4>
+                  <p>Review and confirm before submitting</p>
+                </div>
+              </div>
+ 
+              <div class="ip-info-note" id="ip-summary-note">
+                Applying as: <strong id="ip-summaryName">—</strong> &bull; <span id="ip-summaryEmail">—</span> &bull; Startup: <strong id="ip-summaryStartup">—</strong>
+              </div>
+ 
+              <div class="ip-declaration-list">
+                <label class="ip-declaration-item">
+                  <input type="checkbox" id="ip-dec1" />
+                  <span>I confirm that the information provided in this application is accurate and truthful to the best of my knowledge.</span>
+                </label>
+                <label class="ip-declaration-item">
+                  <input type="checkbox" id="ip-dec2" />
+                  <span>I understand that if selected, I must attend the mandatory pitch prep session and the live pitch event on April 3rd, 2026 at the Faculty of Law, ABU Zaria.</span>
+                </label>
+                <label class="ip-declaration-item">
+                  <input type="checkbox" id="ip-dec3" />
+                  <span>I agree to the <a href="terms.html" target="_blank" style="color:var(--accent-gold-soft);">Lex Xperience Terms &amp; Conditions</a> and understand that the &#8358;20,000 entry fee is non-refundable.</span>
+                </label>
+              </div>
+              <small class="error-message" id="ip-err-declaration" style="display:block; margin-top:0.5rem;"></small>
+ 
+              <div class="ip-nav">
+                <button type="button" class="btn btn-outline" onclick="ipPrev(5)">&larr; Back</button>
+                <button type="button" class="btn btn-primary" onclick="ipShowPayment()">Pay &rarr;</button>
+              </div>
+            </div>
+ 
+          </div><!-- /#innovateAppForm -->
+ 
+          <!-- Pay button — appears only after all steps are completed -->
+          <div class="form-group" id="innovatePayGroup" style="display:none; margin-top: 1rem;">
+            <div class="ip-info-note" style="margin-bottom: 0.85rem;">
+              Your application is complete. Proceed to pay &#8358;20,000 to confirm your Lex Innovate entry.
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="innovateOnlyPayBtn">
+              Pay &#8358;20,000
+            </button>
+            <p class="form-footnote">You'll receive a confirmation email once payment is complete.</p>
           </div>
-
+ 
+          <!-- Final thank you after payment + submission -->
+          <div class="post-payment" id="innovateOnlyThanks" style="display:none;">
+            Your Lex Innovate application has been submitted! We'll review it and reach out via email with next steps. Good luck!
+          </div>
+ 
           <div class="form-loader">
             <div class="form-loader-spinner"></div>
             <span class="form-loader-text" id="innovateLoaderMessage">Verifying...</span>
@@ -422,7 +783,7 @@
       </div>
     </div>
   </section>
-
+ 
   <footer class="footer fade-in">
     <div class="container footer-grid">
       <div class="fade-slide-left">
@@ -433,7 +794,7 @@
           Shaping Tomorrow's Justice Through Innovation, Media & Creative Power.
         </p>
       </div>
-
+ 
       <div class="fade-slide-right">
         <h4 class="footer-heading">Event</h4>
         <ul class="footer-list">
@@ -441,7 +802,7 @@
           <li><a href="#register">Tickets</a></li>
         </ul>
       </div>
-
+ 
       <div>
         <h4 class="footer-heading">Legal</h4>
         <ul class="footer-list">
@@ -449,24 +810,25 @@
           <li><a href="terms.html">Terms</a></li>
         </ul>
       </div>
-
+ 
       <div class="fade-slide-right">
         <h4 class="footer-heading">Contact</h4>
         <ul class="footer-list">
-<li><a href="mailto:lexxperience01@gmail.com">lexxperience01@gmail.com</a></li>
+          <li><a href="mailto:lexxperience01@gmail.com">lexxperience01@gmail.com</a></li>
           <li><a href="https://www.instagram.com/lex_.experience?igsh=YXdqbnBudnlkNzFh&utm_source=qr" target="_blank">Instagram</a></li>
         </ul>
       </div>
     </div>
-
+ 
     <div class="footer-bottom">
       <p>&copy; 2026 Lex Xperience. All rights reserved.</p>
     </div>
   </footer>
-
-  <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
-
+ 
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">&#8593;</button>
+ 
   <script src="https://js.paystack.co/v1/inline.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+ 
