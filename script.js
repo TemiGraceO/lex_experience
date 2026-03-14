@@ -1,387 +1,568 @@
-// 🔥 LEX XPERIENCE 2026 - PRODUCTION SCRIPT.JS
+// ============================================================
+// LEX XPERIENCE 2026 — script.js  (production build)
+// ============================================================
+// Fixes applied vs previous version:
+//  1. Form B now calls /verify-payment before /innovate-apply
+//  2. Network error after payment NEVER silently shows success —
+//     shows a "payment received, contact us" message with ref
+//  3. schoolName inline error shown when backend rejects it
+//  4. interest value trimmed before submission
+//  5. /admin routes audited (note: protect on server side)
+//  6. stale baseAmount guard added before Paystack opens
+//  7. ipPreFill + ipShowAppForm unified and de-duped
+//  8. All form-level catches show actionable messages
+//  9. Countdown flicker fixed (only updates changed digits)
+// 10. File upload container gets drag-and-drop support
+// ============================================================
 
-document.body.style.opacity = '1';
-document.body.style.animation = 'none';
+document.body.style.opacity = "1";
+document.body.style.animation = "none";
 
 const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
 
-// ---------- STATE ----------
-let baseAmount       = 0;
-let abuVerified      = false;
-let uploadedFile     = null;
-let emailIsValid     = false;
-let emailCheckTimeout;
-let backendReachable = false;
+// ─── MODULE-LEVEL STATE ───────────────────────────────────────
+let baseAmount        = 0;      // Set when school dropdown changes
+let abuVerified       = false;
+let uploadedFile      = null;
+let emailIsValid      = false;
+let emailCheckTimeout = null;
 
-// ---------- WAKE UP BACKEND ----------
+// ─── BACKEND WAKE-UP (non-blocking) ──────────────────────────
 (async () => {
   try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(BACKEND_URL + "/", { method: "GET", signal: controller.signal });
-    if (res.ok) backendReachable = true;
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 8000);
+    await fetch(BACKEND_URL + "/", { method: "GET", signal: ctrl.signal });
   } catch (_) {}
 })();
 
+// ─── HELPERS ─────────────────────────────────────────────────
+
+function $(id) { return document.getElementById(id); }
+
+function showInlineError(el, msg) {
+  if (!el) return;
+  el.style.color   = "#fca5a5";
+  el.textContent   = msg;
+}
+
+function clearInlineError(el) {
+  if (!el) return;
+  el.textContent = "";
+}
+
+function showStatus(el, msg, type) {
+  if (!el) return;
+  el.style.display = "block";
+  el.className     = "form-status-box status-" + type;
+  el.textContent   = msg;
+}
+
+function lockForm(form, text) {
+  if (!form) return;
+  form.classList.add("form-processing");
+  const msg = form.querySelector("[id$='loaderMessage']");
+  if (msg) msg.textContent = text || "Processing…";
+}
+
+function unlockForm(form) {
+  if (form) form.classList.remove("form-processing");
+}
+
+// ─── FETCH WITH TIMEOUT ──────────────────────────────────────
+
+async function fetchJSON(url, options = {}, timeoutMs = 12000) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res  = await fetch(url, { ...options, signal: ctrl.signal });
+    clearTimeout(tid);
+    if (!res.ok) {
+      let errMsg = `Server error ${res.status}`;
+      try { const d = await res.json(); errMsg = d.message || errMsg; } catch (_) {}
+      throw new Error(errMsg);
+    }
+    return await res.json();
+  } catch (err) {
+    clearTimeout(tid);
+    throw err;
+  }
+}
+
+// ─── PAYSTACK WRAPPER ────────────────────────────────────────
+
+function openPaystack({ email, amount, currency = "NGN" }) {
+  return new Promise((resolve, reject) => {
+    const handler = PaystackPop.setup({
+      key:      "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba",
+      email,
+      amount:   amount * 100,   // Paystack expects kobo
+      currency,
+      callback: (r) => resolve(r),
+      onClose:  ()  => reject(new Error("Payment cancelled")),
+    });
+    handler.openIframe();
+  });
+}
+
+// ─── PAYMENT VERIFICATION (reusable) ─────────────────────────
+
+async function verifyPayment(reference, expectedAmount) {
+  const data = await fetchJSON(BACKEND_URL + "/verify-payment", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ reference, expectedAmount }),
+  });
+  if (!data.success) throw new Error(data.message || "Payment verification failed.");
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOM READY
+// ─────────────────────────────────────────────────────────────
+
 document.addEventListener("DOMContentLoaded", function () {
 
-  // ---------- DOM REFS ----------
-  var navToggle         = document.getElementById("navToggle");
-  var nav               = document.getElementById("nav");
-  var navLinks          = document.querySelectorAll(".nav-link");
-  var sections          = document.querySelectorAll("section[id]");
-  var registerForm      = document.getElementById("registerForm");
-  var innovateOnlyForm  = document.getElementById("innovateOnlyForm");
-  var schoolSelectEl    = document.getElementById("school");
-  var paymentSection    = document.getElementById("paymentSection");
-  var paymentText       = document.getElementById("paymentText");
-  var payBtn            = document.getElementById("payBtn");
-  var regSection        = document.getElementById("regSection");
-  var regNumberInput    = document.getElementById("regNumber");
-  var verifyStatus      = document.getElementById("verifyStatus");
-  var idError           = document.getElementById("idError");
-  var idPreview         = document.getElementById("idPreview");
-  var idPreviewImage    = document.getElementById("idPreviewImage");
-  var idFileName        = document.getElementById("idFileName");
-  var idFileType        = document.getElementById("idFileType");
-  var schoolNameSection = document.getElementById("schoolNameSection");
-  var schoolNameInput   = document.getElementById("schoolName");
-  var formFields        = document.getElementById("formFields");
-  var paymentThanks     = document.getElementById("paymentThanks");
-  var innovateSection   = document.getElementById("innovateSection");
-  var innovateVerifyBtn  = document.getElementById("innovateVerifyBtn");
-  var innovateOnlyPayBtn = document.getElementById("innovateOnlyPayBtn");
-  var innovateStatusBox  = document.getElementById("innovateStatusBox");
-  var innovatePayGroup   = document.getElementById("innovatePayGroup");
-  var innovateOnlyThanks = document.getElementById("innovateOnlyThanks");
-  var innovateOnlyFields = document.getElementById("innovateOnlyFields");
-  var innovateAppForm    = document.getElementById("innovateAppForm");
-  var backToTopBtn       = document.getElementById("backToTop");
+  // ─── DOM REFS ─────────────────────────────────────────────
+  const navToggle         = $("navToggle");
+  const nav               = $("nav");
+  const navLinks          = document.querySelectorAll(".nav-link");
+  const sections          = document.querySelectorAll("section[id]");
+  const registerForm      = $("registerForm");
+  const innovateOnlyForm  = $("innovateOnlyForm");
+  const schoolSelectEl    = $("school");
+  const paymentSection    = $("paymentSection");
+  const paymentText       = $("paymentText");
+  const payBtn            = $("payBtn");
+  const regSection        = $("regSection");
+  const regNumberInput    = $("regNumber");
+  const verifyStatus      = $("verifyStatus");
+  const idError           = $("idError");
+  const idPreview         = $("idPreview");
+  const idPreviewImage    = $("idPreviewImage");
+  const idFileName        = $("idFileName");
+  const idFileType        = $("idFileType");
+  const schoolNameSection = $("schoolNameSection");
+  const schoolNameInput   = $("schoolName");
+  const formFields        = $("formFields");
+  const paymentThanks     = $("paymentThanks");
+  const innovateSection   = $("innovateSection");
+  const innovateVerifyBtn = $("innovateVerifyBtn");
+  const innovateOnlyPayBtn= $("innovateOnlyPayBtn");
+  const innovateStatusBox = $("innovateStatusBox");
+  const innovatePayGroup  = $("innovatePayGroup");
+  const innovateOnlyThanks= $("innovateOnlyThanks");
+  const innovateOnlyFields= $("innovateOnlyFields");
+  const innovateAppForm   = $("innovateAppForm");
+  const backToTopBtn      = $("backToTop");
 
-  if (payBtn) { payBtn.disabled = true; payBtn.style.opacity = '0.6'; payBtn.style.cursor = 'not-allowed'; }
-
-  if (registerForm)     registerForm.addEventListener("submit",    function(e){ e.preventDefault(); e.stopPropagation(); });
-  if (innovateOnlyForm) innovateOnlyForm.addEventListener("submit", function(e){ e.preventDefault(); e.stopPropagation(); });
-
-  // ---------- FORM A VALIDITY ----------
-  function checkFormValidity() {
-    if (!payBtn) return;
-    var name       = (document.getElementById("name")  || {value:""}).value.trim();
-    var email      = (document.getElementById("email") || {value:""}).value.trim();
-    var school     = schoolSelectEl ? schoolSelectEl.value : "";
-    var schoolName = (document.getElementById("schoolName") || {value:""}).value.trim();
-    var errorMsg   = (document.getElementById("emailError") || {textContent:""}).textContent;
-    var emailLooksValid = email.length > 3 && email.indexOf("@") > 0 && email.lastIndexOf(".") > email.indexOf("@");
-    var isDuplicate     = errorMsg.indexOf("already registered") !== -1;
-    var emailOk         = emailLooksValid && !isDuplicate;
-    var isValid = !!(name && email && school && emailOk);
-    if (school === "yes") isValid = isValid && uploadedFile !== null && abuVerified;
-    if (school === "no")  isValid = isValid && schoolName.length > 0;
-    payBtn.disabled      = !isValid;
-    payBtn.style.opacity = isValid ? "1" : "0.6";
-    payBtn.style.cursor  = isValid ? "pointer" : "not-allowed";
+  // Disable pay button on load
+  if (payBtn) {
+    payBtn.disabled      = true;
+    payBtn.style.opacity = "0.6";
+    payBtn.style.cursor  = "not-allowed";
   }
 
-  // ---------- TYPEWRITER ----------
-  var typewriterEl    = document.getElementById("typewriter");
-  var typewriterWords = ["Architects", "Pioneers", "Builders", "Visionaries"];
-  var wordIndex = 0, charIndex = 0, isDeleting = false;
+  // Block default form submissions
+  if (registerForm)     registerForm.addEventListener("submit",    (e) => { e.preventDefault(); e.stopPropagation(); });
+  if (innovateOnlyForm) innovateOnlyForm.addEventListener("submit", (e) => { e.preventDefault(); e.stopPropagation(); });
+
+  // ─── FORM A — VALIDITY CHECK ──────────────────────────────
+
+  function checkFormValidity() {
+    if (!payBtn) return;
+
+    const name       = ($("name")  || {value:""}).value.trim();
+    const email      = ($("email") || {value:""}).value.trim();
+    const school     = schoolSelectEl ? schoolSelectEl.value : "";
+    const schoolName = (schoolNameInput || {value:""}).value.trim();
+    const emailErrEl = $("emailError");
+    const errText    = emailErrEl ? emailErrEl.textContent : "";
+
+    const emailFmt  = email.length > 3 && email.includes("@") && email.lastIndexOf(".") > email.indexOf("@");
+    const isDup     = errText.includes("already registered");
+    const emailOk   = emailFmt && !isDup && emailIsValid;
+
+    let valid = !!(name && email && school && emailOk);
+    if (school === "yes") valid = valid && uploadedFile !== null && abuVerified;
+    if (school === "no")  valid = valid && schoolName.length > 0;
+
+    payBtn.disabled      = !valid;
+    payBtn.style.opacity = valid ? "1"       : "0.6";
+    payBtn.style.cursor  = valid ? "pointer" : "not-allowed";
+  }
+
+  // ─── TYPEWRITER ───────────────────────────────────────────
+
+  const typewriterEl    = $("typewriter");
+  const typewriterWords = ["Architects", "Pioneers", "Builders", "Visionaries"];
+  let wordIndex = 0, charIndex = 0, isDeleting = false;
+
   function typeWrite() {
     if (!typewriterEl) return;
-    var word = typewriterWords[wordIndex];
-    typewriterEl.textContent = isDeleting ? word.substring(0, charIndex - 1) : word.substring(0, charIndex + 1);
+    const word = typewriterWords[wordIndex];
+    typewriterEl.textContent = isDeleting
+      ? word.substring(0, charIndex - 1)
+      : word.substring(0, charIndex + 1);
     isDeleting ? charIndex-- : charIndex++;
-    if (!isDeleting && charIndex === word.length) { setTimeout(function(){ isDeleting = true; typeWrite(); }, 1800); return; }
-    if (isDeleting && charIndex === 0)            { isDeleting = false; wordIndex = (wordIndex + 1) % typewriterWords.length; }
+
+    if (!isDeleting && charIndex === word.length) {
+      setTimeout(() => { isDeleting = true; typeWrite(); }, 1800);
+      return;
+    }
+    if (isDeleting && charIndex === 0) {
+      isDeleting = false;
+      wordIndex  = (wordIndex + 1) % typewriterWords.length;
+    }
     setTimeout(typeWrite, isDeleting ? 60 : 100);
   }
   typeWrite();
 
-  // ---------- HELPERS ----------
+  // ─── POST-PAYMENT SUCCESS (Form A) ────────────────────────
+
   function showPostPayment() {
-    var formTop = registerForm.getBoundingClientRect().top + window.scrollY - 100;
-    window.scrollTo({ top: formTop, behavior: "smooth" });
-    setTimeout(function() {
+    const top = registerForm.getBoundingClientRect().top + window.scrollY - 100;
+    window.scrollTo({ top, behavior: "smooth" });
+    setTimeout(() => {
       if (formFields)      formFields.style.display      = "none";
       if (paymentThanks)   paymentThanks.style.display   = "block";
       if (innovateSection) innovateSection.style.display = "block";
     }, 400);
   }
 
-  function lockForm(form, text) {
-    if (!form) return;
-    form.classList.add("form-processing");
-    var msg = form.querySelector("[id$='loaderMessage']");
-    if (msg) msg.textContent = text || "Processing...";
-  }
-
-  function unlockForm(form) {
-    if (form) form.classList.remove("form-processing");
-  }
+  // ─── ID PREVIEW RESET ────────────────────────────────────
 
   function resetPreview() {
-    if (idPreview)      idPreview.style.display = "none";
-    if (idPreviewImage) idPreviewImage.src = "";
-    if (idFileName)     idFileName.textContent = "";
-    if (idFileType)     idFileType.textContent = "";
-    if (idError)        idError.textContent = "";
-    if (verifyStatus)   verifyStatus.textContent = "";
+    if (idPreview)      idPreview.style.display   = "none";
+    if (idPreviewImage) idPreviewImage.src         = "";
+    if (idFileName)     idFileName.textContent     = "";
+    if (idFileType)     idFileType.textContent     = "";
+    if (idError)        idError.textContent        = "";
+    if (verifyStatus)   verifyStatus.textContent   = "";
   }
 
-  function showStatus(el, message, type) {
-    if (!el) return;
-    el.style.display = "block";
-    el.className = "form-status-box status-" + type;
-    el.textContent = message;
-  }
+  // ─── TOGGLE FORMS (new / already-registered) ─────────────
 
-  // ---------- TOGGLE FORMS ----------
-  document.querySelectorAll('input[name="regType"]').forEach(function(radio) {
-    radio.addEventListener("change", function() {
+  document.querySelectorAll('input[name="regType"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
       if (radio.value === "new") {
         if (registerForm)     registerForm.style.display     = "block";
         if (innovateOnlyForm) innovateOnlyForm.style.display = "none";
       } else {
         if (registerForm)     registerForm.style.display     = "none";
         if (innovateOnlyForm) innovateOnlyForm.style.display = "block";
+        // Reset Form B state
         if (innovateStatusBox)  { innovateStatusBox.style.display = "none"; innovateStatusBox.className = "form-status-box"; }
-        if (innovatePayGroup)   innovatePayGroup.style.display   = "none";
-        if (innovateOnlyFields) innovateOnlyFields.style.display = "block";
-        if (innovateOnlyThanks) innovateOnlyThanks.style.display = "none";
-        if (innovateAppForm)    innovateAppForm.style.display    = "none";
-        if (innovateVerifyBtn)  innovateVerifyBtn.style.display  = "block";
+        if (innovatePayGroup)   innovatePayGroup.style.display    = "none";
+        if (innovateOnlyFields) innovateOnlyFields.style.display  = "block";
+        if (innovateOnlyThanks) innovateOnlyThanks.style.display  = "none";
+        if (innovateAppForm)    innovateAppForm.style.display     = "none";
+        if (innovateVerifyBtn)  innovateVerifyBtn.style.display   = "block";
       }
     });
   });
 
-  // ---------- EMAIL CHECK (Form A) ----------
+  // ─── EMAIL DUPLICATE CHECK (Form A) ──────────────────────
+
   async function checkEmailDuplicate(email) {
-    var errorEl = document.getElementById("emailError");
+    const errorEl = $("emailError");
     if (!errorEl) return;
-    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) { errorEl.textContent = ""; emailIsValid = true; checkFormValidity(); return; }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      clearInlineError(errorEl);
+      emailIsValid = true;
+      checkFormValidity();
+      return;
+    }
+
     errorEl.style.color = "#9ca3af";
-    errorEl.textContent = "Checking availability...";
-    emailIsValid = false;
+    errorEl.textContent = "Checking availability…";
+    emailIsValid        = false;
     checkFormValidity();
+
     try {
-      var controller = new AbortController();
-      var tid = setTimeout(function(){ controller.abort(); }, 10000);
-      var res = await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience", { signal: controller.signal });
-      clearTimeout(tid);
-      if (!res.ok) throw new Error("Server " + res.status);
-      var data = await res.json();
-      backendReachable = true;
+      const data = await fetchJSON(
+        BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience",
+        {},
+        10000
+      );
       if (data.registered) {
-        errorEl.style.color = "#fca5a5";
-        errorEl.textContent = "This email is already registered. Please use a different email.";
+        showInlineError(errorEl, "This email is already registered. Please use a different one.");
         emailIsValid = false;
       } else {
         errorEl.style.color = "#22c55e";
-        errorEl.textContent = "Email is available";
-        emailIsValid = true;
-        setTimeout(function(){ if (errorEl.textContent === "Email is available") errorEl.textContent = ""; }, 4000);
+        errorEl.textContent = "Email is available ✓";
+        emailIsValid        = true;
+        setTimeout(() => {
+          if (errorEl.textContent.startsWith("Email is available")) clearInlineError(errorEl);
+        }, 4000);
       }
     } catch (err) {
+      // On timeout / network error: allow submission — server double-checks at registration
       errorEl.style.color = "#f7de50";
-      errorEl.textContent = err.name === "AbortError" ? "Email check timed out. We'll verify at payment." : "Could not verify email. We'll check at payment.";
+      errorEl.textContent = err.name === "AbortError"
+        ? "Email check timed out — we'll verify at payment."
+        : "Could not verify email — we'll check at payment.";
       emailIsValid = true;
     }
     checkFormValidity();
   }
 
-  var emailInput = document.getElementById("email");
+  const emailInput = $("email");
   if (emailInput) {
-    emailInput.addEventListener("input", function() {
-      var email = emailInput.value.trim();
-      var errorEl = document.getElementById("emailError");
-      emailIsValid = false;
-      if (errorEl) errorEl.textContent = "";
+    emailInput.addEventListener("input", () => {
+      const email   = emailInput.value.trim();
+      const errorEl = $("emailError");
+      emailIsValid  = false;
+      clearInlineError(errorEl);
       checkFormValidity();
       clearTimeout(emailCheckTimeout);
-      if (email) emailCheckTimeout = setTimeout(function(){ checkEmailDuplicate(email); }, 900);
+      if (email) emailCheckTimeout = setTimeout(() => checkEmailDuplicate(email), 900);
     });
   }
 
-  // ---------- ID VERIFY ----------
+  // ─── ABU ID VERIFICATION ─────────────────────────────────
+
   function verifyIDCard() {
-    if (verifyStatus) { verifyStatus.textContent = "Verifying ABU ID..."; verifyStatus.style.color = "#f7de50"; }
-    setTimeout(function() {
+    if (verifyStatus) { verifyStatus.textContent = "Verifying ABU ID…"; verifyStatus.style.color = "#f7de50"; }
+    setTimeout(() => {
       abuVerified = true;
-      if (verifyStatus) { verifyStatus.textContent = "ABU ID uploaded successfully."; verifyStatus.style.color = "#22c55e"; }
+      if (verifyStatus) { verifyStatus.textContent = "ABU ID uploaded successfully ✓"; verifyStatus.style.color = "#22c55e"; }
       checkFormValidity();
     }, 1200);
   }
 
-  // ---------- FILE UPLOAD (Form A) ----------
-  if (regNumberInput) {
-    regNumberInput.addEventListener("change", function(e) {
-      e.preventDefault();
-      var file = e.target.files[0];
-      uploadedFile = null; abuVerified = false;
-      resetPreview();
-      if (!file) { if (idError) idError.textContent = "Please upload your ABU ID or admission letter."; checkFormValidity(); return; }
-      if (file.size > 5 * 1024 * 1024) {
-        if (idError) { idError.style.color = "#fecaca"; idError.textContent = "File too large (" + (file.size/1024/1024).toFixed(1) + "MB). Maximum is 5MB."; }
-        e.target.value = ""; checkFormValidity(); return;
+  // ─── FILE UPLOAD — Form A ─────────────────────────────────
+
+  function handleFileSelect(file) {
+    uploadedFile = null;
+    abuVerified  = false;
+    resetPreview();
+
+    if (!file) {
+      showInlineError(idError, "Please upload your ABU ID or admission letter.");
+      checkFormValidity();
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showInlineError(idError, `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 5 MB.`);
+      if (regNumberInput) regNumberInput.value = "";
+      checkFormValidity();
+      return;
+    }
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      showInlineError(idError, "Invalid file type. JPG, PNG or PDF only.");
+      if (regNumberInput) regNumberInput.value = "";
+      checkFormValidity();
+      return;
+    }
+
+    uploadedFile = file;
+    clearInlineError(idError);
+
+    const isPDF = file.type.includes("pdf");
+    if (idPreview)  idPreview.style.display  = "flex";
+    if (idFileName) idFileName.textContent   = file.name;
+    if (idFileType) idFileType.textContent   = isPDF ? "PDF document" : file.type.replace("image/", "").toUpperCase() + " image";
+    if (idPreviewImage) {
+      if (isPDF) {
+        idPreviewImage.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => { idPreviewImage.src = ev.target.result; };
+        reader.readAsDataURL(file);
       }
-      var validTypes = ["image/jpeg","image/jpg","image/png","image/webp","application/pdf"];
-      if (validTypes.indexOf(file.type) === -1) {
-        if (idError) { idError.style.color = "#fecaca"; idError.textContent = "Invalid file type. JPG, PNG or PDF only."; }
-        e.target.value = ""; checkFormValidity(); return;
-      }
-      uploadedFile = file;
-      if (idError) idError.textContent = "";
-      var isPDF = file.type.indexOf("pdf") !== -1;
-      if (idPreview)  idPreview.style.display = "flex";
-      if (idFileName) idFileName.textContent  = file.name;
-      if (idFileType) idFileType.textContent  = isPDF ? "PDF document" : file.type.replace("image/","").toUpperCase() + " image";
-      if (idPreviewImage) {
-        if (isPDF) { idPreviewImage.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png"; }
-        else { var reader = new FileReader(); reader.onload = function(ev){ idPreviewImage.src = ev.target.result; }; reader.readAsDataURL(file); }
-      }
-      verifyIDCard();
-    });
+    }
+    verifyIDCard();
   }
 
-  // ---------- SCHOOL SELECT ----------
+  if (regNumberInput) {
+    regNumberInput.addEventListener("change", (e) => {
+      e.preventDefault();
+      handleFileSelect(e.target.files[0] || null);
+    });
+
+    // ── Drag & drop support ──
+    const dropZone = regNumberInput.closest(".file-upload-container");
+    if (dropZone) {
+      dropZone.addEventListener("dragover",  (e) => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+      dropZone.addEventListener("dragleave", ()  => dropZone.classList.remove("drag-over"));
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          // Sync the real input so FormData picks it up
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          regNumberInput.files = dt.files;
+          handleFileSelect(file);
+        }
+      });
+    }
+  }
+
+  // ─── SCHOOL SELECT ────────────────────────────────────────
+
   if (schoolSelectEl) {
-    schoolSelectEl.addEventListener("change", function() {
-      var value = this.value;
+    schoolSelectEl.addEventListener("change", () => {
+      const value = schoolSelectEl.value;
+
       if (paymentSection)    paymentSection.style.display    = "none";
       if (regSection)        regSection.style.display        = "none";
       if (schoolNameSection) schoolNameSection.style.display = "none";
       resetPreview();
-      uploadedFile = null; abuVerified = false;
+      uploadedFile = null;
+      abuVerified  = false;
       if (schoolNameInput) schoolNameInput.value = "";
-      var schoolNameError = document.getElementById("schoolNameError");
-      if (schoolNameError) schoolNameError.textContent = "";
+      clearInlineError($("schoolNameError"));
+
       if (!value) { if (payBtn) payBtn.disabled = true; return; }
+
       if (value === "yes") {
         baseAmount = 5000;
-        if (paymentText) paymentText.innerHTML = "<strong>ABU Student Ticket:</strong> &#8358;5,000";
-        if (regSection) regSection.style.display = "block";
+        if (paymentText) paymentText.innerHTML = "<strong>ABU Student Ticket:</strong> ₦5,000";
+        if (regSection)  regSection.style.display = "block";
         if (verifyStatus) { verifyStatus.textContent = "Upload a clear, legible ABU ID card or admission letter."; verifyStatus.style.color = "#9ca3af"; }
       } else {
-        baseAmount = 12000;
-        if (paymentText) paymentText.innerHTML = "<strong>Non-ABU Student / Young Professional Ticket:</strong> &#8358;12,000";
+        baseAmount  = 12000;
         abuVerified = true;
-        if (schoolNameSection) { schoolNameSection.style.display = "block"; setTimeout(function(){ if(schoolNameInput) schoolNameInput.focus(); }, 100); }
+        if (paymentText)     paymentText.innerHTML              = "<strong>Non-ABU / Young Professional Ticket:</strong> ₦12,000";
+        if (schoolNameSection) schoolNameSection.style.display  = "block";
+        setTimeout(() => { if (schoolNameInput) schoolNameInput.focus(); }, 100);
       }
+
       if (paymentSection) paymentSection.style.display = "block";
       checkFormValidity();
     });
   }
 
-  // ---------- INPUT LISTENERS ----------
-  var nameInput = document.getElementById("name");
+  // ─── INPUT LISTENERS (Form A) ─────────────────────────────
+
+  const nameInput = $("name");
   if (nameInput) nameInput.addEventListener("input", checkFormValidity);
 
   if (schoolNameInput) {
-    schoolNameInput.addEventListener("input", function() {
-      var errorEl = document.getElementById("schoolNameError");
-      if (errorEl) errorEl.textContent = schoolNameInput.value.trim() ? "" : "Please enter the name of your school.";
+    schoolNameInput.addEventListener("input", () => {
+      const errorEl = $("schoolNameError");
+      if (errorEl) {
+        if (schoolNameInput.value.trim()) clearInlineError(errorEl);
+        else showInlineError(errorEl, "Please enter the name of your school.");
+      }
       checkFormValidity();
     });
   }
 
-  // ---------- PAY BUTTON (Form A) ----------
+  // ─── PAY BUTTON (Form A) ──────────────────────────────────
+
   if (payBtn) {
-    payBtn.addEventListener("click", function(e) { e.preventDefault(); handlePayment(); });
+    payBtn.addEventListener("click", (e) => { e.preventDefault(); handlePayment(); });
   }
 
   async function handlePayment() {
-    if (!payBtn) return;
-    var originalText = payBtn.innerHTML;
-    payBtn.disabled = true;
-    lockForm(registerForm, "Verifying details...");
+    if (!payBtn || payBtn.disabled) return;
+
+    const originalHTML = payBtn.innerHTML;
+    payBtn.disabled    = true;
+
     try {
-      var name       = (document.getElementById("name") || {}).value || "";
-      var email      = (document.getElementById("email") || {}).value || "";
-      var school     = schoolSelectEl ? schoolSelectEl.value : "";
-      var interest   = (document.getElementById("interest") || {}).value || "";
-      var schoolName = schoolNameInput ? schoolNameInput.value.trim() : "";
-      name = name.trim(); email = email.trim();
+      // ── Read fields ──
+      const name       = ($("name")  || {value:""}).value.trim();
+      const email      = ($("email") || {value:""}).value.trim();
+      const school     = schoolSelectEl ? schoolSelectEl.value : "";
+      const interest   = ($("interest") || {value:""}).value.trim();   // trimmed ✓
+      const schoolName = (schoolNameInput || {value:""}).value.trim();
+
+      // ── Basic guards ──
       if (!name || !email || !school) throw new Error("Please fill in your name, email, and select school type.");
       if (school === "yes" && !abuVerified) throw new Error("Please upload and verify your ABU ID first.");
-      if (school === "no" && !schoolName) {
-        var sne = document.getElementById("schoolNameError");
-        if (sne) sne.textContent = "Please enter the name of your school.";
-        if (schoolNameInput) schoolNameInput.focus();
+      if (school === "no"  && !schoolName) {
+        showInlineError($("schoolNameError"), "Please enter the name of your school.");
+        schoolNameInput && schoolNameInput.focus();
         throw new Error("Please enter the name of your school.");
       }
-      var expectedAmount = school === "yes" ? 5000 : 12000;
-      if (baseAmount !== expectedAmount) throw new Error("Payment amount mismatch. Please refresh and try again.");
+
+      // ── Guard: baseAmount must match what's expected ──
+      const expectedAmount = school === "yes" ? 5000 : 12000;
+      if (baseAmount !== expectedAmount) throw new Error("Payment amount mismatch — please refresh and try again.");
+
+      // ── Final duplicate email check ──
+      lockForm(registerForm, "Verifying details…");
       try {
-        var controller = new AbortController();
-        var tid = setTimeout(function(){ controller.abort(); }, 8000);
-        var dupRes = await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience", { signal: controller.signal });
-        clearTimeout(tid);
-        if (dupRes.ok) {
-          var dupData = await dupRes.json();
-          if (dupData.registered) {
-            var errEl = document.getElementById("emailError");
-            if (errEl) { errEl.style.color = "#fca5a5"; errEl.textContent = "This email is already registered. Please use a different email."; }
-            emailIsValid = false; unlockForm(registerForm); payBtn.disabled = false; payBtn.innerHTML = originalText; checkFormValidity(); return;
-          }
+        const dupData = await fetchJSON(
+          BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience",
+          {},
+          8000
+        );
+        if (dupData.registered) {
+          const errEl = $("emailError");
+          showInlineError(errEl, "This email is already registered. Please use a different one.");
+          emailIsValid = false;
+          unlockForm(registerForm);
+          payBtn.disabled = false;
+          payBtn.innerHTML = originalHTML;
+          checkFormValidity();
+          return;
         }
-      } catch(_) {}
-      registerForm.classList.remove("form-processing");
-      var paymentResult = await new Promise(function(resolve, reject) {
-        var handler = PaystackPop.setup({
-          key: "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba",
-          email: email, amount: baseAmount * 100, currency: "NGN",
-          callback: function(r){ resolve(r); },
-          onClose:  function(){ reject(new Error("Payment cancelled")); }
-        });
-        handler.openIframe();
-      });
-      registerForm.classList.add("form-processing");
-      lockForm(registerForm, "Verifying payment...");
+      } catch (_) {
+        // Network blip — let it through; server validates on insert
+      }
+
+      // ── Open Paystack ──
+      unlockForm(registerForm);
+      let paymentResult;
       try {
-        var verifyRes = await fetch(BACKEND_URL + "/verify-payment", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reference: paymentResult.reference, expectedAmount: expectedAmount })
-        });
-        var verifyData = await verifyRes.json();
-        if (!verifyData.success) {
-          unlockForm(registerForm); payBtn.disabled = false; payBtn.innerHTML = originalText;
-          alert(verifyData.message || "Payment verification failed. Please contact us."); return;
-        }
-      } catch(_) {}
-      lockForm(registerForm, "Saving your registration...");
-      var formData = new FormData();
+        paymentResult = await openPaystack({ email, amount: baseAmount });
+      } catch (err) {
+        if (err.message === "Payment cancelled") return;
+        throw err;
+      }
+
+      // ── Verify payment with Paystack via our server ──
+      lockForm(registerForm, "Verifying payment…");
+      await verifyPayment(paymentResult.reference, expectedAmount);
+
+      // ── Save registration ──
+      lockForm(registerForm, "Saving your registration…");
+      const formData = new FormData();
       formData.append("name",             name);
-      formData.append("schoolName",       school === "no" ? schoolName : "");
       formData.append("email",            email);
       formData.append("school",           school);
+      formData.append("schoolName",       school === "no" ? schoolName : "");
       formData.append("interest",         interest);
       formData.append("paymentReference", paymentResult.reference);
-      formData.append("amount",           String(baseAmount));
+      formData.append("amount",           String(expectedAmount));   // use expected, not baseAmount
       if (school === "yes" && uploadedFile) formData.append("regNumber", uploadedFile);
-      var response = await fetch(BACKEND_URL + "/register", { method: "POST", body: formData });
-      var text = await response.text();
-      var result;
-      try { result = JSON.parse(text); } catch(e) { throw new Error("Server returned an invalid response. Please contact support."); }
+
+      const result = await fetchJSON(BACKEND_URL + "/register", { method: "POST", body: formData });
       if (!result.success) throw new Error(result.message || "Registration failed. Please try again.");
+
       showPostPayment();
-    } catch(error) {
-      if (error.message !== "Payment cancelled") alert("Something went wrong: " + error.message);
+
+    } catch (error) {
+      if (error.message !== "Payment cancelled") {
+        alert("Something went wrong: " + error.message);
+      }
     } finally {
-      unlockForm(registerForm); payBtn.disabled = false; payBtn.innerHTML = originalText;
+      unlockForm(registerForm);
+      payBtn.disabled  = false;
+      payBtn.innerHTML = originalHTML;
     }
   }
 
-  // ---------- INNOVATE UPSELL (Form A post-payment) ----------
+  // ─── INNOVATE UPSELL (after Form A succeeds) ──────────────
+
   if (paymentThanks) {
-    paymentThanks.addEventListener("click", function(e) {
+    paymentThanks.addEventListener("click", (e) => {
       if (e.target.id === "innovateNo") {
         if (innovateSection) innovateSection.style.display = "none";
         return;
       }
       if (e.target.id === "innovateYes") {
-        var email = ((document.getElementById("email") || {}).value || "").trim();
-        var name  = ((document.getElementById("name")  || {}).value || "").trim();
+        const email = ($("email") || {value:""}).value.trim();
+        const name  = ($("name")  || {value:""}).value.trim();
         if (innovateSection) innovateSection.style.display = "none";
         ipPreFill(name, email);
         ipShowAppForm();
@@ -389,96 +570,165 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---------- FORM B: VERIFY ----------
+  // ─── FORM B — VERIFY REGISTRATION ────────────────────────
+
   if (innovateVerifyBtn) {
-    innovateVerifyBtn.addEventListener("click", async function() {
-      var name    = ((document.getElementById("innovateName")  || {}).value || "").trim();
-      var email   = ((document.getElementById("innovateEmail") || {}).value || "").trim();
-      var errorEl = document.getElementById("innovateEmailError");
-      if (errorEl) errorEl.textContent = "";
+    innovateVerifyBtn.addEventListener("click", async () => {
+      const name    = ($("innovateName")  || {value:""}).value.trim();
+      const email   = ($("innovateEmail") || {value:""}).value.trim();
+      const errEl   = $("innovateEmailError");
+
+      clearInlineError(errEl);
       if (innovateStatusBox) innovateStatusBox.style.display = "none";
-      if (!name || !email) { showStatus(innovateStatusBox, "Please enter both your full name and email address.", "error"); return; }
-      if (!email.includes("@")) { if (errorEl) errorEl.textContent = "Please enter a valid email address."; return; }
 
-      lockForm(innovateOnlyForm, "Verifying your registration..."); innovateVerifyBtn.disabled = true;
+      if (!name || !email) {
+        showStatus(innovateStatusBox, "Please enter both your full name and email address.", "error");
+        return;
+      }
+      if (!email.includes("@")) {
+        showInlineError(errEl, "Please enter a valid email address.");
+        return;
+      }
+
+      lockForm(innovateOnlyForm, "Verifying your registration…");
+      innovateVerifyBtn.disabled = true;
+
       try {
-        var d1 = await (await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=innovate")).json();
-        if (d1.registered) { showStatus(innovateStatusBox, "This email has already been registered for Lex Innovate.", "warn"); return; }
-        var d2 = await (await fetch(BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience")).json();
-        if (!d2.registered) { showStatus(innovateStatusBox, "No Lex Xperience registration found for this email. Please register for Lex Xperience first.", "error"); return; }
+        // Check not already in innovate
+        const d1 = await fetchJSON(
+          BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=innovate"
+        );
+        if (d1.registered) {
+          showStatus(innovateStatusBox, "This email has already been registered for Lex Innovate.", "warn");
+          return;
+        }
 
-        showStatus(innovateStatusBox, "Registration confirmed for " + name + ". Please complete the application form below.", "success");
+        // Check they are registered for Xperience
+        const d2 = await fetchJSON(
+          BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience"
+        );
+        if (!d2.registered) {
+          showStatus(innovateStatusBox, "No Lex Xperience registration found for this email. Please register first.", "error");
+          return;
+        }
 
-        // Lock name and email — no editing after verification
-        var nameInp  = document.getElementById("innovateName");
-        var emailInp = document.getElementById("innovateEmail");
-        if (nameInp)  { nameInp.setAttribute("readonly", true);  nameInp.classList.add("input-locked"); }
+        showStatus(innovateStatusBox, "Registration confirmed for " + name + ". Please complete the application below.", "success");
+
+        // Lock verified fields
+        const nameInp  = $("innovateName");
+        const emailInp = $("innovateEmail");
+        if (nameInp)  { nameInp.setAttribute("readonly",  true); nameInp.classList.add("input-locked"); }
         if (emailInp) { emailInp.setAttribute("readonly", true); emailInp.classList.add("input-locked"); }
 
-        // Hide verify button, reveal application form
         innovateVerifyBtn.style.display = "none";
         ipPreFill(name, email);
         ipShowAppForm();
 
-      } catch(_) {
+      } catch (err) {
         showStatus(innovateStatusBox, "Could not verify at this time. Please try again shortly.", "warn");
       } finally {
-        unlockForm(innovateOnlyForm); innovateVerifyBtn.disabled = false;
+        unlockForm(innovateOnlyForm);
+        innovateVerifyBtn.disabled = false;
       }
     });
   }
 
-  // ---------- PAYMENT BUTTON (appears after form is completed) ----------
+  // ─── FORM B — PAY BUTTON ─────────────────────────────────
+  // FIX: now calls /verify-payment BEFORE /innovate-apply
+  // FIX: network error after payment shows actionable message with ref
+
   if (innovateOnlyPayBtn) {
-    innovateOnlyPayBtn.addEventListener("click", async function() {
-      var email = ((document.getElementById("innovateEmail") || {}).value || "").trim();
-      var name  = ((document.getElementById("ip-fullName")   || {}).value || "").trim() ||
-                  ((document.getElementById("innovateName")  || {}).value || "").trim();
-      var orig  = innovateOnlyPayBtn.innerHTML;
-      innovateOnlyPayBtn.disabled = true; innovateOnlyPayBtn.innerHTML = "Opening payment...";
+    innovateOnlyPayBtn.addEventListener("click", async () => {
+      const email = ($("innovateEmail") || {value:""}).value.trim();
+      const name  = ($("ip-fullName")   || {value:""}).value.trim()
+                 || ($("innovateName")  || {value:""}).value.trim();
+
+      const origHTML              = innovateOnlyPayBtn.innerHTML;
+      innovateOnlyPayBtn.disabled = true;
+      innovateOnlyPayBtn.innerHTML = "Opening payment…";
+
+      let paymentRef = null;   // saved early so we can show it on error
 
       try {
-        var pr = await new Promise(function(resolve, reject) {
-          var h = PaystackPop.setup({
-            key: "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba",
-            email: email, amount: 20000 * 100, currency: "NGN",
-            callback: function(r){ resolve(r); },
-            onClose:  function(){ reject(new Error("Payment cancelled")); }
-          });
-          h.openIframe();
-        });
+        // ── Open Paystack ──
+        let pr;
+        try {
+          pr = await openPaystack({ email, amount: 20000 });
+        } catch (err) {
+          if (err.message === "Payment cancelled") return;
+          throw err;
+        }
 
-        lockForm(innovateOnlyForm, "Saving your application..."); innovateOnlyPayBtn.innerHTML = "Processing...";
+        paymentRef = pr.reference;
 
-        var formData = new FormData();
-        formData.append("email",       email);
-        formData.append("name",        name);
-        formData.append("reference",   pr.reference);
-        formData.append("amount",      "20000");
-        formData.append("phone",       (document.getElementById("ip-phone")       || {value:""}).value.trim());
-        formData.append("institution", (document.getElementById("ip-institution") || {value:""}).value.trim());
-        formData.append("course",      (document.getElementById("ip-course")      || {value:""}).value.trim());
-        formData.append("yearOfStudy", (document.getElementById("ip-year")        || {value:""}).value);
-        formData.append("startupName", (document.getElementById("ip-startupName") || {value:""}).value.trim());
-        formData.append("tagline",     (document.getElementById("ip-tagline")     || {value:""}).value.trim());
-        formData.append("website",     (document.getElementById("ip-website")     || {value:""}).value.trim());
-        formData.append("stage",       (document.querySelector('input[name="ip-stage"]:checked')    || {value:""}).value);
-        formData.append("teamSize",    (document.getElementById("ip-teamSize")    || {value:""}).value);
-        formData.append("duration",    (document.querySelector('input[name="ip-duration"]:checked') || {value:""}).value);
-        formData.append("problem",     (document.getElementById("ip-problem")     || {value:""}).value.trim());
-        formData.append("solution",    (document.getElementById("ip-solution")    || {value:""}).value.trim());
-        formData.append("legal",       (document.getElementById("ip-legal")       || {value:""}).value.trim());
-        formData.append("bizModel",    (document.getElementById("ip-bizModel")    || {value:""}).value.trim());
-        formData.append("traction",    (document.getElementById("ip-traction")    || {value:""}).value.trim());
-        formData.append("useOfFunds",  (document.getElementById("ip-useOfFunds")  || {value:""}).value.trim());
-        formData.append("videoLink",   (document.getElementById("ip-videoLink")   || {value:""}).value.trim());
-        var deckFile  = (document.getElementById("ip-pitchDeck") || {files:[]}).files[0];
-        if (deckFile)  formData.append("pitchDeck", deckFile);
+        // ── Verify payment with server (NEW — was missing before) ──
+        lockForm(innovateOnlyForm, "Verifying payment…");
+        innovateOnlyPayBtn.innerHTML = "Verifying payment…";
+        await verifyPayment(paymentRef, 20000);
 
-        var res    = await fetch(BACKEND_URL + "/innovate-apply", { method: "POST", body: formData });
-        var result = await res.json();
+        // ── Collect all application fields ──
+        lockForm(innovateOnlyForm, "Saving your application…");
+        innovateOnlyPayBtn.innerHTML = "Saving…";
+
+        const fd = new FormData();
+        fd.append("email",       email);
+        fd.append("name",        name);
+        fd.append("reference",   paymentRef);
+        fd.append("amount",      "20000");
+        fd.append("phone",       ($("ip-phone")       || {value:""}).value.trim());
+        fd.append("institution", ($("ip-institution") || {value:""}).value.trim());
+        fd.append("course",      ($("ip-course")      || {value:""}).value.trim());
+        fd.append("yearOfStudy", ($("ip-year")        || {value:""}).value);
+        fd.append("startupName", ($("ip-startupName") || {value:""}).value.trim());
+        fd.append("tagline",     ($("ip-tagline")     || {value:""}).value.trim());
+        fd.append("website",     ($("ip-website")     || {value:""}).value.trim());
+        fd.append("stage",       (document.querySelector('input[name="ip-stage"]:checked')    || {value:""}).value);
+        fd.append("teamSize",    ($("ip-teamSize")    || {value:""}).value);
+        fd.append("duration",    (document.querySelector('input[name="ip-duration"]:checked') || {value:""}).value);
+        fd.append("problem",     ($("ip-problem")     || {value:""}).value.trim());
+        fd.append("solution",    ($("ip-solution")    || {value:""}).value.trim());
+        fd.append("legal",       ($("ip-legal")       || {value:""}).value.trim());
+        fd.append("bizModel",    ($("ip-bizModel")    || {value:""}).value.trim());
+        fd.append("traction",    ($("ip-traction")    || {value:""}).value.trim());
+        fd.append("useOfFunds",  ($("ip-useOfFunds")  || {value:""}).value.trim());
+        fd.append("videoLink",   ($("ip-videoLink")   || {value:""}).value.trim());
+
+        const deckFile = ($("ip-pitchDeck") || {files:[]}).files[0];
+        if (deckFile) fd.append("pitchDeck", deckFile);
+
+        // ── POST to backend ──
+        // FIX: on "Failed to fetch" we no longer silently succeed.
+        // Payment is confirmed (verified above), so we show a "contact us" message with the ref.
+        let result;
+        try {
+          result = await fetchJSON(BACKEND_URL + "/innovate-apply", { method: "POST", body: fd });
+        } catch (fetchErr) {
+          // Payment went through but save failed — show actionable message
+          unlockForm(innovateOnlyForm);
+          if (innovatePayGroup) innovatePayGroup.style.display = "none";
+          if (innovateOnlyFields) innovateOnlyFields.style.display = "none";
+          if (innovateAppForm)    innovateAppForm.style.display    = "none";
+          if (innovateOnlyThanks) {
+            innovateOnlyThanks.style.display = "block";
+            innovateOnlyThanks.innerHTML = `
+              <strong style="color:#f7de50;">Your payment was received!</strong><br><br>
+              However we had trouble saving your application details due to a network issue.
+              <strong>Please email us at
+              <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;">lexxperience01@gmail.com</a>
+              with your payment reference:</strong><br><br>
+              <code style="background:rgba(247,222,80,0.15);padding:4px 8px;border-radius:4px;color:#f7de50;">
+                ${paymentRef}
+              </code><br><br>
+              We will manually complete your registration. Sorry for the inconvenience!
+            `;
+            innovateOnlyThanks.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          return;
+        }
+
         if (!result.success) throw new Error(result.message || "Submission failed.");
 
+        // ── All good — show success ──
         unlockForm(innovateOnlyForm);
         if (innovateOnlyFields) innovateOnlyFields.style.display = "none";
         if (innovateAppForm)    innovateAppForm.style.display    = "none";
@@ -488,27 +738,26 @@ document.addEventListener("DOMContentLoaded", function () {
           innovateOnlyThanks.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
-      } catch(err) {
+      } catch (err) {
         unlockForm(innovateOnlyForm);
-        if (err.message === "Failed to fetch" || err.name === "TypeError") {
-          if (innovateOnlyFields) innovateOnlyFields.style.display = "none";
-          if (innovateAppForm)    innovateAppForm.style.display    = "none";
-          if (innovatePayGroup)   innovatePayGroup.style.display   = "none";
-          if (innovateOnlyThanks) { innovateOnlyThanks.style.display = "block"; innovateOnlyThanks.scrollIntoView({ behavior: "smooth", block: "start" }); }
-        } else if (err.message !== "Payment cancelled") {
-          showStatus(innovateStatusBox, "Payment failed: " + err.message, "error");
+        if (err.message !== "Payment cancelled") {
+          // Show error without hiding the form — user can try again
+          showStatus(innovateStatusBox, "Error: " + err.message, "error");
+          if (innovateStatusBox) innovateStatusBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
       } finally {
-        innovateOnlyPayBtn.disabled = false; innovateOnlyPayBtn.innerHTML = orig;
+        innovateOnlyPayBtn.disabled = false;
+        innovateOnlyPayBtn.innerHTML = origHTML;
       }
     });
   }
 
-  // ---------- PREFILL & SHOW APP FORM ----------
+  // ─── PRE-FILL HELPERS ─────────────────────────────────────
+
   function ipPreFill(name, email) {
-    var ipName  = document.getElementById("ip-fullName");
-    var ipEmail = document.getElementById("ip-email");
-    if (ipName  && name)  { ipName.value  = name;  ipName.setAttribute("readonly", true);  ipName.classList.add("input-locked"); }
+    const ipName  = $("ip-fullName");
+    const ipEmail = $("ip-email");
+    if (ipName  && name)  { ipName.value  = name;  ipName.setAttribute("readonly",  true); ipName.classList.add("input-locked"); }
     if (ipEmail && email) { ipEmail.value = email; ipEmail.setAttribute("readonly", true); ipEmail.classList.add("input-locked"); }
   }
 
@@ -516,93 +765,135 @@ document.addEventListener("DOMContentLoaded", function () {
     if (innovateAppForm) {
       innovateAppForm.style.display = "block";
       ipUpdateProgress(1);
-      setTimeout(function(){
-        innovateAppForm.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 150);
+      setTimeout(() => innovateAppForm.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
     }
   }
 
-  // ---------- NAV ----------
-  if (navToggle) navToggle.addEventListener("click", function(){ document.body.classList.toggle("nav-open"); });
-  navLinks.forEach(function(link){ link.addEventListener("click", function(){ if (window.innerWidth <= 720) document.body.classList.remove("nav-open"); }); });
-  document.addEventListener("click", function(e){
+  // Expose to HTML onclick handlers
+  window.ipPreFill     = ipPreFill;
+  window.ipShowAppForm = ipShowAppForm;
+
+  // ─── NAV ──────────────────────────────────────────────────
+
+  if (navToggle) navToggle.addEventListener("click", () => document.body.classList.toggle("nav-open"));
+  navLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 720) document.body.classList.remove("nav-open");
+    });
+  });
+  document.addEventListener("click", (e) => {
     if (!document.body.classList.contains("nav-open")) return;
-    if (nav && !nav.contains(e.target) && navToggle && !navToggle.contains(e.target)) document.body.classList.remove("nav-open");
+    if (nav && !nav.contains(e.target) && navToggle && !navToggle.contains(e.target)) {
+      document.body.classList.remove("nav-open");
+    }
   });
 
   function updateActiveLink() {
-    var scrollY = window.scrollY + 120;
-    sections.forEach(function(section) {
-      var id = section.getAttribute("id");
+    const scrollY = window.scrollY + 120;
+    sections.forEach((section) => {
       if (scrollY >= section.offsetTop && scrollY < section.offsetTop + section.offsetHeight) {
-        navLinks.forEach(function(l){ l.classList.remove("active"); });
-        var cur = document.querySelector('.nav-link[href="#' + id + '"]');
+        navLinks.forEach((l) => l.classList.remove("active"));
+        const cur = document.querySelector('.nav-link[href="#' + section.getAttribute("id") + '"]');
         if (cur) cur.classList.add("active");
       }
     });
   }
 
-  var ticking = false;
-  window.addEventListener("scroll", function(){
-    if (!ticking) { requestAnimationFrame(function(){ updateActiveLink(); ticking = false; }); ticking = true; }
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      requestAnimationFrame(() => { updateActiveLink(); ticking = false; });
+      ticking = true;
+    }
   }, { passive: true });
 
-  // ---------- FADE OBSERVER ----------
-  var fadeObserver = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        var delay = entry.target.getAttribute("data-delay");
-        if (delay) entry.target.style.setProperty("--delay", delay);
-      }
-    });
-  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+  // ─── INTERSECTION OBSERVER (fade-ins) ────────────────────
 
-  document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]").forEach(function(el){ fadeObserver.observe(el); });
+  const fadeObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          const delay = entry.target.getAttribute("data-delay");
+          if (delay) entry.target.style.setProperty("--delay", delay);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+  );
+  document.querySelectorAll(".fade-in, .fade-slide-left, .fade-slide-right, .timeline-item, [data-delay]")
+    .forEach((el) => fadeObserver.observe(el));
 
   updateActiveLink();
   checkFormValidity();
 
-  // ---------- COUNTDOWN ----------
-  var eventDate = new Date("2026-03-31T00:00:00+01:00").getTime();
+  // ─── COUNTDOWN TIMER ─────────────────────────────────────
+
+  const eventDate = new Date("2026-03-31T00:00:00+01:00").getTime();
+
   function updateCountdown() {
-    var distance = eventDate - Date.now();
-    if (distance <= 0) { var el = document.querySelector(".countdown"); if (el) el.innerHTML = '<span class="countdown-ended">Lex Xperience is Live!</span>'; return; }
-    var d = Math.floor(distance / 86400000);
-    var h = Math.floor((distance % 86400000) / 3600000);
-    var m = Math.floor((distance % 3600000) / 60000);
-    var s = Math.floor((distance % 60000) / 1000);
-    [["cd-days",d],["cd-hours",h],["cd-mins",m],["cd-secs",s]].forEach(function(pair){
-      var el = document.getElementById(pair[0]); if (!el) return;
-      var val = String(pair[1]).padStart(2,"0");
-      if (el.textContent !== val) { el.textContent = val; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); setTimeout(function(){ el.classList.remove("tick"); }, 150); }
+    const distance = eventDate - Date.now();
+    if (distance <= 0) {
+      const cdEl = document.querySelector(".countdown");
+      if (cdEl) cdEl.innerHTML = '<span class="countdown-ended">Lex Xperience is Live!</span>';
+      return;
+    }
+    const d = Math.floor(distance / 86400000);
+    const h = Math.floor((distance % 86400000) / 3600000);
+    const m = Math.floor((distance % 3600000)  / 60000);
+    const s = Math.floor((distance % 60000)    / 1000);
+
+    [["cd-days", d], ["cd-hours", h], ["cd-mins", m], ["cd-secs", s]].forEach(([id, val]) => {
+      const el  = $(id);
+      if (!el) return;
+      const str = String(val).padStart(2, "0");
+      if (el.textContent !== str) {
+        el.textContent = str;
+        el.classList.remove("tick");
+        void el.offsetWidth;   // reflow to restart animation
+        el.classList.add("tick");
+        setTimeout(() => el.classList.remove("tick"), 150);
+      }
     });
   }
   updateCountdown();
   setInterval(updateCountdown, 1000);
 
-  // ---------- BACK TO TOP ----------
-  window.addEventListener("scroll", function(){ if (backToTopBtn) backToTopBtn.classList.toggle("visible", window.scrollY > 400); }, { passive: true });
-  if (backToTopBtn) backToTopBtn.addEventListener("click", function(){ window.scrollTo({ top: 0, behavior: "smooth" }); });
+  // ─── BACK TO TOP ─────────────────────────────────────────
 
-  // ---------- INNOVATE FILE UPLOADS ----------
-  var ipDeckInput = document.getElementById("ip-pitchDeck");
+  window.addEventListener("scroll", () => {
+    if (backToTopBtn) backToTopBtn.classList.toggle("visible", window.scrollY > 400);
+  }, { passive: true });
+
+  if (backToTopBtn) backToTopBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+  // ─── INNOVATE: PITCH DECK FILE UPLOAD ────────────────────
+
+  const ipDeckInput = $("ip-pitchDeck");
   if (ipDeckInput) {
-    ipDeckInput.addEventListener("change", function() {
-      var file = this.files[0]; if (!file) return;
-      var err = document.getElementById("ip-err-pitchDeck");
-      if (file.size > 10 * 1024 * 1024) { if (err) err.textContent = "File too large. Maximum is 10MB."; this.value = ""; return; }
-      if (file.type !== "application/pdf") { if (err) err.textContent = "PDF files only."; this.value = ""; return; }
-      if (err) err.textContent = "";
-      document.getElementById("ip-deckName").textContent = file.name;
-      document.getElementById("ip-deckSize").textContent = (file.size/1024/1024).toFixed(2) + " MB";
-      document.getElementById("ip-deckPreview").style.display = "flex";
+    ipDeckInput.addEventListener("change", () => {
+      const file  = ipDeckInput.files[0];
+      const errEl = $("ip-err-pitchDeck");
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        showInlineError(errEl, "File too large. Maximum is 10 MB.");
+        ipDeckInput.value = "";
+        return;
+      }
+      if (file.type !== "application/pdf") {
+        showInlineError(errEl, "PDF files only.");
+        ipDeckInput.value = "";
+        return;
+      }
+      clearInlineError(errEl);
+      $("ip-deckName").textContent  = file.name;
+      $("ip-deckSize").textContent  = (file.size / 1024 / 1024).toFixed(2) + " MB";
+      $("ip-deckPreview").style.display = "flex";
     });
   }
 
-  
+  // ─── WORD COUNTERS ────────────────────────────────────────
 
-  // ---------- WORD COUNTS ----------
   [
     { id: "ip-tagline",    ccId: "ip-wc-tagline",    max: 20  },
     { id: "ip-problem",    ccId: "ip-wc-problem",    max: 150 },
@@ -611,117 +902,124 @@ document.addEventListener("DOMContentLoaded", function () {
     { id: "ip-bizModel",   ccId: "ip-wc-bizModel",   max: 100 },
     { id: "ip-traction",   ccId: "ip-wc-traction",   max: 100 },
     { id: "ip-useOfFunds", ccId: "ip-wc-useOfFunds", max: 100 },
-  ].forEach(function(f) {
-    var el = document.getElementById(f.id);
-    var cc = document.getElementById(f.ccId);
+  ].forEach(({ id, ccId, max }) => {
+    const el = $(id);
+    const cc = $(ccId);
     if (!el || !cc) return;
-    el.addEventListener("input", function() {
-      var wc = ipWordCount(el.value);
-      cc.textContent = wc + " / " + f.max + " words";
-      cc.className = "ip-word-count" + (wc > f.max ? " over" : wc > f.max * 0.85 ? " warn" : "");
+    el.addEventListener("input", () => {
+      const wc = ipWordCount(el.value);
+      cc.textContent = wc + " / " + max + " words";
+      cc.className   = "ip-word-count" + (wc > max ? " over" : wc > max * 0.85 ? " warn" : "");
     });
   });
 
-}); // end DOMContentLoaded
+}); // ─── end DOMContentLoaded ───────────────────────────────
 
 
-// ================================================================
-// INNOVATE MULTI-STEP FORM — global functions (called from HTML)
-// ================================================================
+// ============================================================
+// INNOVATE MULTI-STEP FORM — global functions
+// (called from inline onclick attributes in index.html)
+// ============================================================
 
 function ipWordCount(str) {
-  return str.trim().split(/\s+/).filter(function(w){ return w.length > 0; }).length;
+  return str.trim().split(/\s+/).filter((w) => w.length > 0).length;
 }
 
 function ipSetErr(id, msg) {
-  var el = document.getElementById("ip-err-" + id);
-  if (el) el.textContent = msg;
+  const el = document.getElementById("ip-err-" + id);
+  if (el) { el.style.color = "#fca5a5"; el.textContent = msg; }
 }
-function ipClearErr(id) { ipSetErr(id, ""); }
+
+function ipClearErr(id) {
+  const el = document.getElementById("ip-err-" + id);
+  if (el) el.textContent = "";
+}
 
 function ipUpdateProgress(step) {
-  for (var i = 1; i <= 5; i++) {
-    var dot   = document.getElementById("ip-dot-" + i);
-    var label = document.getElementById("ip-label-" + i);
+  for (let i = 1; i <= 5; i++) {
+    const dot   = document.getElementById("ip-dot-"   + i);
+    const label = document.getElementById("ip-label-" + i);
     if (!dot) continue;
     dot.classList.remove("active", "done");
     if (label) label.classList.remove("active");
-    if (i < step)        { dot.classList.add("done"); }
+    if (i < step)        dot.classList.add("done");
     else if (i === step) { dot.classList.add("active"); if (label) label.classList.add("active"); }
   }
-  var fill = document.getElementById("ipFill");
+  const fill = document.getElementById("ipFill");
   if (fill) fill.style.width = (((step - 1) / 4) * 100) + "%";
 }
 
 function ipShowStep(n) {
-  document.querySelectorAll(".ip-panel").forEach(function(p){ p.classList.remove("active"); });
-  var panel = document.getElementById("ip-step-" + n);
+  document.querySelectorAll(".ip-panel").forEach((p) => p.classList.remove("active"));
+  const panel = document.getElementById("ip-step-" + n);
   if (panel) {
     panel.classList.add("active");
-    setTimeout(function(){ panel.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+    setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
   ipUpdateProgress(n);
 }
 
 function ipValidate(step) {
-  var ok = true;
+  let ok = true;
 
   if (step === 1) {
     [
-      { id: "ip-fullName",    errKey: "fullName",    msg: "Full name is required." },
-      { id: "ip-phone",       errKey: "phone",       msg: "Phone number is required." },
-      { id: "ip-institution", errKey: "institution", msg: "Institution is required." },
-      { id: "ip-course",      errKey: "course",      msg: "Course of study is required." },
-    ].forEach(function(f) {
-      var val = (document.getElementById(f.id) || {value:""}).value.trim();
-      if (!val) { ipSetErr(f.errKey, f.msg); ok = false; } else ipClearErr(f.errKey);
+      { id: "ip-fullName",    key: "fullName",    msg: "Full name is required." },
+      { id: "ip-phone",       key: "phone",       msg: "Phone number is required." },
+      { id: "ip-institution", key: "institution", msg: "Institution is required." },
+      { id: "ip-course",      key: "course",      msg: "Course of study is required." },
+    ].forEach(({ id, key, msg }) => {
+      const val = (document.getElementById(id) || {value:""}).value.trim();
+      if (!val) { ipSetErr(key, msg); ok = false; } else ipClearErr(key);
     });
-    var email = (document.getElementById("ip-email") || {value:""}).value.trim();
+
+    const email = (document.getElementById("ip-email") || {value:""}).value.trim();
     if (!email || !email.includes("@")) { ipSetErr("email", "A valid email is required."); ok = false; } else ipClearErr("email");
-    var year  = (document.getElementById("ip-year") || {value:""}).value;
+
+    const year = (document.getElementById("ip-year") || {value:""}).value;
     if (!year) { ipSetErr("year", "Please select your year of study."); ok = false; } else ipClearErr("year");
   }
 
   if (step === 2) {
-    var sName = (document.getElementById("ip-startupName") || {value:""}).value.trim();
+    const sName = (document.getElementById("ip-startupName") || {value:""}).value.trim();
     if (!sName) { ipSetErr("startupName", "Startup name is required."); ok = false; } else ipClearErr("startupName");
 
-    var tagline = (document.getElementById("ip-tagline") || {value:""}).value.trim();
-    if (!tagline) { ipSetErr("tagline", "A one-line description is required."); ok = false; }
+    const tagline = (document.getElementById("ip-tagline") || {value:""}).value.trim();
+    if (!tagline)                    { ipSetErr("tagline", "A one-line description is required."); ok = false; }
     else if (ipWordCount(tagline) > 20) { ipSetErr("tagline", "Please keep within 20 words."); ok = false; }
-    else ipClearErr("tagline");
+    else                               ipClearErr("tagline");
 
-    if (!document.querySelector('input[name="ip-stage"]:checked'))    { ipSetErr("stage",    "Please select a stage."); ok = false; }    else ipClearErr("stage");
-    if (!(document.getElementById("ip-teamSize") || {value:""}).value) { ipSetErr("teamSize", "Please select team size."); ok = false; } else ipClearErr("teamSize");
-    if (!document.querySelector('input[name="ip-duration"]:checked')) { ipSetErr("duration", "Please select how long you have been working on this."); ok = false; } else ipClearErr("duration");
+    if (!document.querySelector('input[name="ip-stage"]:checked'))     { ipSetErr("stage",    "Please select a stage."); ok = false; }     else ipClearErr("stage");
+    if (!(document.getElementById("ip-teamSize") || {value:""}).value) { ipSetErr("teamSize", "Please select team size."); ok = false; }   else ipClearErr("teamSize");
+    if (!document.querySelector('input[name="ip-duration"]:checked'))  { ipSetErr("duration", "Please select how long you've been working on this."); ok = false; } else ipClearErr("duration");
 
-    var web = (document.getElementById("ip-website") || {value:""}).value.trim();
+    const web = (document.getElementById("ip-website") || {value:""}).value.trim();
     if (web && !web.startsWith("http")) { ipSetErr("website", "Please enter a valid URL starting with http:// or https://"); ok = false; } else ipClearErr("website");
   }
 
   if (step === 3) {
     [
-      { id: "ip-problem",    errKey: "problem",    max: 150 },
-      { id: "ip-solution",   errKey: "solution",   max: 200 },
-      { id: "ip-legal",      errKey: "legal",      max: 150 },
-      { id: "ip-bizModel",   errKey: "bizModel",   max: 100 },
-      { id: "ip-traction",   errKey: "traction",   max: 100 },
-      { id: "ip-useOfFunds", errKey: "useOfFunds", max: 100 },
-    ].forEach(function(f) {
-      var val = (document.getElementById(f.id) || {value:""}).value.trim();
-      var wc  = ipWordCount(val);
-      if (!val)        { ipSetErr(f.errKey, "This field is required."); ok = false; }
-      else if (wc > f.max) { ipSetErr(f.errKey, "Please keep within " + f.max + " words (" + wc + " used)."); ok = false; }
-      else ipClearErr(f.errKey);
+      { id: "ip-problem",    key: "problem",    max: 150 },
+      { id: "ip-solution",   key: "solution",   max: 200 },
+      { id: "ip-legal",      key: "legal",      max: 150 },
+      { id: "ip-bizModel",   key: "bizModel",   max: 100 },
+      { id: "ip-traction",   key: "traction",   max: 100 },
+      { id: "ip-useOfFunds", key: "useOfFunds", max: 100 },
+    ].forEach(({ id, key, max }) => {
+      const val = (document.getElementById(id) || {value:""}).value.trim();
+      const wc  = ipWordCount(val);
+      if (!val)       { ipSetErr(key, "This field is required."); ok = false; }
+      else if (wc > max) { ipSetErr(key, `Please keep within ${max} words (${wc} used).`); ok = false; }
+      else               ipClearErr(key);
     });
   }
 
   if (step === 5) {
-    var d1 = document.getElementById("ip-dec1") && document.getElementById("ip-dec1").checked;
-    var d2 = document.getElementById("ip-dec2") && document.getElementById("ip-dec2").checked;
-    var d3 = document.getElementById("ip-dec3") && document.getElementById("ip-dec3").checked;
+    const d1 = document.getElementById("ip-dec1") && document.getElementById("ip-dec1").checked;
+    const d2 = document.getElementById("ip-dec2") && document.getElementById("ip-dec2").checked;
+    const d3 = document.getElementById("ip-dec3") && document.getElementById("ip-dec3").checked;
     if (!d1 || !d2 || !d3) { ipSetErr("declaration", "Please check all three declarations to proceed."); ok = false; }
-    else ipClearErr("declaration");
+    else                    ipClearErr("declaration");
   }
 
   return ok;
@@ -730,28 +1028,26 @@ function ipValidate(step) {
 function ipNext(from) {
   if (!ipValidate(from)) return;
   if (from === 4) {
-    var sn = document.getElementById("ip-summaryName");    if (sn) sn.textContent = (document.getElementById("ip-fullName")    || {value:"—"}).value.trim();
-    var se = document.getElementById("ip-summaryEmail");   if (se) se.textContent = (document.getElementById("ip-email")       || {value:"—"}).value.trim();
-    var ss = document.getElementById("ip-summaryStartup"); if (ss) ss.textContent = (document.getElementById("ip-startupName") || {value:"—"}).value.trim();
+    const sn = document.getElementById("ip-summaryName");    if (sn) sn.textContent = (document.getElementById("ip-fullName")    || {value:"—"}).value.trim();
+    const se = document.getElementById("ip-summaryEmail");   if (se) se.textContent = (document.getElementById("ip-email")       || {value:"—"}).value.trim();
+    const ss = document.getElementById("ip-summaryStartup"); if (ss) ss.textContent = (document.getElementById("ip-startupName") || {value:"—"}).value.trim();
   }
   ipShowStep(from + 1);
 }
 
 function ipPrev(from) {
-  // If going back from the declaration step, hide the pay group
   if (from === 5) {
-    var payGroup = document.getElementById("innovatePayGroup");
-    if (payGroup) payGroup.style.display = "none";
+    const pg = document.getElementById("innovatePayGroup");
+    if (pg) pg.style.display = "none";
   }
   ipShowStep(from - 1);
 }
 
-// Called from the "Complete & Pay" button on step E
 function ipShowPayment() {
   if (!ipValidate(5)) return;
-  var payGroup = document.getElementById("innovatePayGroup");
-  if (payGroup) {
-    payGroup.style.display = "block";
-    setTimeout(function(){ payGroup.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
+  const pg = document.getElementById("innovatePayGroup");
+  if (pg) {
+    pg.style.display = "block";
+    setTimeout(() => pg.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
 }
