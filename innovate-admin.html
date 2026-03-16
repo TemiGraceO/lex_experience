@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lex Innovate — Admin Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #050608;
+      --bg-elevated:   #0e1015;
+      --bg-card:       #111420;
+      --gold:          #f7de50;
+      --gold-deep:     #b99a2d;
+      --gold-soft:     #f2e7a2;
+      --gold-dim:      rgba(247,222,80,0.12);
+      --green:         #22c55e;
+      --green-dim:     rgba(34,197,94,0.12);
+      --red:           #ef4444;
+      --text:          #f9fafb;
+      --muted:         #6b7280;
+      --border:        rgba(249,250,251,0.08);
+      --border-gold:   rgba(247,222,80,0.25);
+      --radius:        14px;
+      --radius-sm:     8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #050608;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(247,222,80,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247,222,80,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOW BLOB ── */
+    .blob {
+      position: fixed;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(247,222,80,0.06), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      top: -200px; left: -200px;
+      animation: blobDrift 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes blobDrift {
+      from { transform: translate(0,0); }
+      to   { transform: translate(300px, 200px); }
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      background: rgba(5,6,8,0.92);
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-logo {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+    .header-logo .l1 { color: var(--text); }
+    .header-logo .l2 { color: var(--gold); }
+
+    .header-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--gold-dim);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-soft);
+    }
+
+
+    /* ── MAIN ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-tile {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .stat-tile::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+
+    .stat-tile:hover { border-color: var(--border-gold); }
+
+    .stat-tile .label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-tile .value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .stat-tile .sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.6rem 0.9rem 0.6rem 2.4rem;
+      font-size: 0.9rem;
+      font-family: 'DM Mono', monospace;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus { border-color: var(--border-gold); }
+
+    .search-box::before {
+      content: '🔍';
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.06em;
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid var(--border-gold);
+      background: var(--gold-dim);
+      color: var(--gold-soft);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .toolbar-btn:hover { background: rgba(247,222,80,0.2); transform: translateY(-1px); }
+
+    .stage-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stage-pill {
+      padding: 0.4rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .stage-pill.active, .stage-pill:hover {
+      border-color: var(--gold);
+      color: var(--gold-soft);
+      background: var(--gold-dim);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 0.85rem 1.1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(5,6,8,0.6);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+
+    thead th:hover { color: var(--gold-soft); }
+    thead th.sorted { color: var(--gold); }
+    thead th.sorted::after { content: ' ↓'; }
+    thead th.sorted.asc::after { content: ' ↑'; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(247,222,80,0.035); }
+
+    td {
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+
+    .td-name { font-weight: 700; color: var(--text); }
+
+    .td-email {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .td-startup {
+      color: var(--gold-soft);
+      font-weight: 600;
+    }
+
+    .stage-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .stage-idea     { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .stage-prototype{ background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+    .stage-mvp      { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .stage-revenue  { background: rgba(34,197,94,0.15);  color: #86efac; border: 1px solid rgba(34,197,94,0.35); }
+
+    .td-amount {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--green);
+    }
+
+    .td-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .link-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid var(--border-gold);
+      color: var(--gold-soft);
+      background: var(--gold-dim);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .link-badge:hover { background: rgba(247,222,80,0.22); }
+
+    .no-results {
+      padding: 3rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,6,8,0.85);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      width: min(720px, 100%);
+      max-height: 88vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.25s;
+      box-shadow: 0 0 80px rgba(247,222,80,0.08);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.5rem 1.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+
+    .modal-header h2 { font-size: 1.2rem; font-weight: 800; }
+    .modal-header p  { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(249,250,251,0.07);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .modal-close:hover { background: rgba(239,68,68,0.15); color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+
+    .modal-body { padding: 1.4rem 1.6rem; }
+
+    .modal-section {
+      margin-bottom: 1.6rem;
+    }
+
+    .modal-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-soft);
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-gold);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.9rem;
+    }
+
+    .detail-item {}
+
+    .detail-item .key {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .detail-item .val {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .detail-item .val.mono {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--gold-soft);
+    }
+
+    .detail-full { grid-column: 1 / -1; }
+
+    .pitch-block {
+      background: rgba(15,23,42,0.8);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    /* ── LOADER / EMPTY ── */
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 4rem 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 3px solid rgba(247,222,80,0.12);
+      border-top-color: var(--gold);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      color: #fca5a5;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .page-btn:hover { border-color: var(--border-gold); color: var(--gold-soft); }
+    .page-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── TABLE SCROLL WRAPPER ── */
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table { min-width: 700px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      main { padding: 1.5rem 1rem 3rem; }
+      header { padding: 0.75rem 1rem; }
+      .header-badge { display: none; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { min-width: unset; width: 100%; }
+
+      .stage-filter {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+      .stage-filter::-webkit-scrollbar { display: none; }
+      .stage-pill { flex-shrink: 0; }
+
+      .toolbar-btn#exportBtn { width: 100%; justify-content: center; }
+
+      /* modal slides up from bottom on mobile */
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal {
+        width: 100%;
+        max-height: 92vh;
+        border-radius: var(--radius) var(--radius) 0 0;
+        border-bottom: none;
+      }
+      .modal-header { padding: 1.1rem 1.1rem 0.75rem; }
+      .modal-body   { padding: 1rem 1.1rem 2rem; }
+      .detail-grid  { grid-template-columns: 1fr; }
+
+      .stats-bar { gap: 0.65rem; }
+      .stat-tile  { padding: 0.9rem 1rem; }
+      .stat-tile .value { font-size: 1.7rem; }
+    }
+
+    @media (max-width: 400px) {
+      .stat-tile .value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="blob"></div>
+
+<!-- ── HEADER ── -->
+<header>
+  <a class="header-logo" href="#">
+    <span class="l1">Lex</span><span class="l2">Xperience</span>
+  </a>
+  <span class="header-badge">Innovate Admin</span>
+  <button class="toolbar-btn" id="refreshBtn" style="font-size:0.78rem;">⟳ Refresh</button>
+</header>
+
+<!-- ── MAIN ── -->
+<main id="mainContent">
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-tile">
+      <div class="label">Total Applicants</div>
+      <div class="value" id="statTotal">—</div>
+      <div class="sub">All Innovate entries</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Total Collected</div>
+      <div class="value" id="statRevenue" style="font-size:1.6rem;">—</div>
+      <div class="sub">₦20,000 × entries</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">With Pitch Deck</div>
+      <div class="value" id="statDecks">—</div>
+      <div class="sub">Uploaded so far</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">With Video</div>
+      <div class="value" id="statVideos">—</div>
+      <div class="sub">Video links submitted</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search by name, email, startup…" />
+    </div>
+    <div class="stage-filter" id="stageFilter">
+      <button class="stage-pill active" data-stage="all">All</button>
+      <button class="stage-pill" data-stage="idea">Idea</button>
+      <button class="stage-pill" data-stage="prototype">Prototype</button>
+      <button class="stage-pill" data-stage="mvp">MVP</button>
+      <button class="stage-pill" data-stage="revenue">Revenue</button>
+    </div>
+    <button class="toolbar-btn" id="exportBtn">⬇ Export CSV</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <div class="loader" id="tableLoader">
+      <div class="spinner"></div>
+      Loading Innovate registrations…
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination"></div>
+</main>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalTitle">Applicant Details</h2>
+        <p id="modalSub">—</p>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
+
+  const PER_PAGE   = 20;
+  let allData      = [];
+  let filtered     = [];
+  let currentPage  = 1;
+  let sortKey      = "createdAt";
+  let sortAsc      = false;
+  let activeStage  = "all";
+
+  // ── FETCH ─────────────────────────────────────────────────────
+  async function fetchData() {
+    const wrap = document.getElementById("tableWrap");
+    wrap.innerHTML = '<div class="loader"><div class="spinner"></div>Loading Innovate registrations…</div>';
+
+    try {
+      const res = await fetch(BACKEND_URL + "/admin/innovate");
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Server error " + res.status);
+      }
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || "Failed to load data.");
+
+      allData = json.data || [];
+      updateStats();
+      applyFilters();
+
+    } catch (err) {
+      wrap.innerHTML = `<div class="error-box">⚠ ${err.message}<br><small>Double-check your admin key or backend status.</small></div>`;
+    }
+  }
+
+  // ── STATS ─────────────────────────────────────────────────────
+  function updateStats() {
+    document.getElementById("statTotal").textContent   = allData.length;
+    const total = allData.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    document.getElementById("statRevenue").textContent = "₦" + total.toLocaleString();
+    document.getElementById("statDecks").textContent   = allData.filter(r => r.pitchDeckUrl).length;
+    document.getElementById("statVideos").textContent  = allData.filter(r => r.videoLink).length;
+  }
+
+  // ── FILTERS ───────────────────────────────────────────────────
+  function applyFilters() {
+    const q = document.getElementById("searchInput").value.toLowerCase().trim();
+    filtered = allData.filter(r => {
+      const matchSearch =
+        !q ||
+        (r.name        || "").toLowerCase().includes(q) ||
+        (r.email       || "").toLowerCase().includes(q) ||
+        (r.startupName || "").toLowerCase().includes(q) ||
+        (r.institution || "").toLowerCase().includes(q);
+
+      const matchStage =
+        activeStage === "all" || (r.stage || "").toLowerCase() === activeStage;
+
+      return matchSearch && matchStage;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let av = a[sortKey] || ""; let bv = b[sortKey] || "";
+      if (sortKey === "createdAt") { av = new Date(av); bv = new Date(bv); }
+      if (av < bv) return sortAsc ?  -1 : 1;
+      if (av > bv) return sortAsc ?   1 : -1;
+      return 0;
+    });
+
+    currentPage = 1;
+    renderTable();
+  }
+
+  // ── TABLE ─────────────────────────────────────────────────────
+  function renderTable() {
+    const wrap = document.getElementById("tableWrap");
+    const start = (currentPage - 1) * PER_PAGE;
+    const page  = filtered.slice(start, start + PER_PAGE);
+
+    if (filtered.length === 0) {
+      wrap.innerHTML = '<div class="no-results">No applicants match your current filters.</div>';
+      document.getElementById("pagination").innerHTML = "";
+      return;
+    }
+
+    function th(label, key) {
+      const cls = sortKey === key ? (sortAsc ? "sorted asc" : "sorted") : "";
+      return `<th class="${cls}" data-key="${key}">${label}</th>`;
+    }
+
+    const stageClass = s => ({
+      idea: "stage-idea", prototype: "stage-prototype", mvp: "stage-mvp", revenue: "stage-revenue"
+    })[s] || "stage-idea";
+
+    const rows = page.map((r, i) => {
+      const idx = start + i;
+      const d   = r.createdAt ? new Date(r.createdAt) : null;
+      const dateStr = d
+        ? d.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })
+        : "—";
+
+      return `
+        <tr data-idx="${idx}">
+          <td class="td-name">${esc(r.name || "—")}</td>
+          <td class="td-email">${esc(r.email || "—")}</td>
+          <td class="td-startup">${esc(r.startupName || "—")}</td>
+          <td><span class="stage-tag ${stageClass(r.stage)}">${r.stage || "—"}</span></td>
+          <td class="td-amount">₦${(Number(r.amount)||0).toLocaleString()}</td>
+          <td>
+            ${r.pitchDeckUrl ? `<a class="link-badge" href="${esc(r.pitchDeckUrl)}" target="_blank">📄 Deck</a>` : '<span style="color:var(--muted);font-size:0.78rem;">—</span>'}
+            ${r.videoLink ? ` <a class="link-badge" href="${esc(r.videoLink)}" target="_blank">▶ Video</a>` : ""}
+          </td>
+          <td class="td-date">${dateStr}</td>
+        </tr>`;
+    }).join("");
+
+    wrap.innerHTML = `
+      <div class="table-scroll"><table>
+        <thead>
+          <tr>
+            ${th("Name","name")}
+            ${th("Email","email")}
+            ${th("Startup","startupName")}
+            ${th("Stage","stage")}
+            ${th("Paid","amount")}
+            <th>Files</th>
+            ${th("Registered","createdAt")}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+
+    // Sort headers
+    wrap.querySelectorAll("thead th[data-key]").forEach(th => {
+      th.addEventListener("click", () => {
+        if (sortKey === th.dataset.key) sortAsc = !sortAsc;
+        else { sortKey = th.dataset.key; sortAsc = true; }
+        applyFilters();
+      });
+    });
+
+    // Row click → modal
+    wrap.querySelectorAll("tbody tr").forEach(tr => {
+      tr.addEventListener("click", (e) => {
+        if (e.target.tagName === "A") return;
+        openModal(filtered[+tr.dataset.idx]);
+      });
+    });
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const pg = document.getElementById("pagination");
+    if (totalPages <= 1) { pg.innerHTML = ""; return; }
+
+    let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?"disabled":""}>‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) {
+        html += `<button class="page-btn ${i===currentPage?"active":""}" onclick="goPage(${i})">${i}</button>`;
+      } else if (Math.abs(i - currentPage) === 3) {
+        html += `<span style="color:var(--muted);padding:0 4px;">…</span>`;
+      }
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?"disabled":""}>›</button>`;
+    pg.innerHTML = html;
+  }
+
+  window.goPage = function(p) {
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    renderTable();
+    document.querySelector(".table-wrap")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  // ── MODAL ─────────────────────────────────────────────────────
+  function openModal(r) {
+    if (!r) return;
+    document.getElementById("modalTitle").textContent = r.startupName || r.name || "Applicant";
+    document.getElementById("modalSub").textContent   = r.email || "";
+
+    const d = r.createdAt ? new Date(r.createdAt).toLocaleString("en-GB") : "—";
+
+    const stageClass = s => ({
+      idea:"stage-idea",prototype:"stage-prototype",mvp:"stage-mvp",revenue:"stage-revenue"
+    })[s] || "stage-idea";
+
+    function field(key, val, full=false, mono=false) {
+      return `<div class="detail-item${full?" detail-full":""}">
+        <div class="key">${key}</div>
+        <div class="val${mono?" mono":""}">${val || "<span style='color:var(--muted)'>—</span>"}</div>
+      </div>`;
+    }
+
+    function pitchField(key, val) {
+      if (!val) return "";
+      return `<div class="modal-section">
+        <div class="modal-section-title">${key}</div>
+        <div class="pitch-block">${esc(val)}</div>
+      </div>`;
+    }
+
+    document.getElementById("modalBody").innerHTML = `
+      <div class="modal-section">
+        <div class="modal-section-title">Personal Details</div>
+        <div class="detail-grid">
+          ${field("Full Name",   r.name)}
+          ${field("Email",       r.email, false, true)}
+          ${field("Phone",       r.phone, false, true)}
+          ${field("Institution", r.institution)}
+          ${field("Course",      r.course)}
+          ${field("Year",        r.yearOfStudy)}
+          ${field("Registered",  d)}
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Startup</div>
+        <div class="detail-grid">
+          ${field("Startup Name", `<strong style="color:var(--gold-soft)">${esc(r.startupName||"—")}</strong>`)}
+          ${field("Stage", `<span class="stage-tag ${stageClass(r.stage)}">${r.stage||"—"}</span>`)}
+          ${field("Team Size", r.teamSize)}
+          ${field("Duration", r.duration)}
+          ${field("Tagline", r.tagline, true)}
+          ${r.website ? field("Website", `<a href="${esc(r.website)}" target="_blank" class="link-badge">🔗 Open</a>`) : field("Website","—")}
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">Payment</div>
+        <div class="detail-grid">
+          ${field("Amount Paid", `<span style="color:var(--green);font-weight:700;">₦${(Number(r.amount)||0).toLocaleString()}</span>`)}
+          ${field("Reference", r.reference || "—", false, true)}
+        </div>
+      </div>
+
+      ${pitchField("The Problem",       r.problem)}
+      ${pitchField("Solution",          r.solution)}
+      ${pitchField("Legal & Regulatory",r.legal)}
+      ${pitchField("Business Model",    r.bizModel)}
+      ${pitchField("Traction",          r.traction)}
+      ${pitchField("Use of Funds",      r.useOfFunds)}
+
+      <div class="modal-section">
+        <div class="modal-section-title">Supporting Materials</div>
+        <div class="detail-grid">
+          ${r.pitchDeckUrl
+            ? field("Pitch Deck", `<a href="${esc(r.pitchDeckUrl)}" target="_blank" class="link-badge">📄 View Deck</a>`)
+            : field("Pitch Deck", "Not submitted")}
+          ${r.videoLink
+            ? field("Video", `<a href="${esc(r.videoLink)}" target="_blank" class="link-badge">▶ Watch Video</a>`)
+            : field("Video", "Not submitted")}
+        </div>
+      </div>
+    `;
+
+    document.getElementById("modalOverlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("modalOverlay").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("modalOverlay")) closeModal();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  function closeModal() {
+    document.getElementById("modalOverlay").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  // ── SEARCH & FILTER ───────────────────────────────────────────
+  let searchTimeout;
+  document.getElementById("searchInput").addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 280);
+  });
+
+  document.getElementById("stageFilter").addEventListener("click", (e) => {
+    const pill = e.target.closest(".stage-pill");
+    if (!pill) return;
+    document.querySelectorAll(".stage-pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+    activeStage = pill.dataset.stage;
+    applyFilters();
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", fetchData);
+
+  // Auto-load on page open
+  fetchData();
+
+  // ── EXPORT CSV ────────────────────────────────────────────────
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const cols = ["name","email","phone","institution","course","yearOfStudy","startupName","tagline","stage","teamSize","duration","amount","reference","createdAt","pitchDeckUrl","videoLink"];
+    const header = cols.join(",");
+    const rows = filtered.map(r =>
+      cols.map(c => '"' + String(r[c]||"").replace(/"/g,'""') + '"').join(",")
+    );
+    const csv  = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type:"text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "lex-innovate-" + new Date().toISOString().slice(0,10) + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── UTIL ──────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s||"")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;");
+  }
+</script>
+</body>
+</html>

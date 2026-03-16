@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lex Xperience — Expense Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #050608;
+      --bg-elevated:  #0e1015;
+      --bg-card:      #111420;
+      --gold:         #f7de50;
+      --gold-deep:    #b99a2d;
+      --gold-soft:    #f2e7a2;
+      --gold-dim:     rgba(247,222,80,0.10);
+      --green:        #22c55e;
+      --green-dim:    rgba(34,197,94,0.10);
+      --red:          #ef4444;
+      --red-dim:      rgba(239,68,68,0.10);
+      --text:         #f9fafb;
+      --muted:        #6b7280;
+      --border:       rgba(249,250,251,0.08);
+      --border-gold:  rgba(247,222,80,0.22);
+      --radius:       14px;
+      --radius-sm:    8px;
+      --font:         system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:         ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: #050608;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(247,222,80,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247,222,80,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      background: rgba(5,6,8,0.92);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+    .logo .l1 { color: var(--text); }
+    .logo .l2 { color: var(--gold); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: var(--gold-dim);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-soft);
+    }
+
+    /* ── MAIN ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 2rem 5rem;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .summary-card.income::before  { background: linear-gradient(90deg, var(--green), transparent); }
+    .summary-card.spent::before   { background: linear-gradient(90deg, var(--red), transparent); }
+    .summary-card.balance::before { background: linear-gradient(90deg, var(--gold), transparent); }
+    .summary-card.entries::before { background: linear-gradient(90deg, #818cf8, transparent); }
+
+    .summary-card .s-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-card .s-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: var(--mono);
+      line-height: 1.1;
+    }
+
+    .summary-card.income  .s-value { color: var(--green); }
+    .summary-card.spent   .s-value { color: #f87171; }
+    .summary-card.balance .s-value { color: var(--gold); }
+    .summary-card.entries .s-value { color: #a5b4fc; }
+
+    .summary-card .s-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── INCOME BAR ── */
+    .income-bar {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .income-bar label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .income-bar input {
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--green);
+      background: rgba(34,197,94,0.07);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.75rem;
+      outline: none;
+      width: 200px;
+      transition: border-color 0.2s;
+    }
+
+    .income-bar input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.12);
+    }
+
+    .income-bar .income-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ── ADD FORM ── */
+    .add-form {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.3rem;
+      margin-bottom: 1.5rem;
+      display: grid;
+      grid-template-columns: 130px 1fr 160px 140px auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .form-field { display: flex; flex-direction: column; gap: 0.3rem; }
+
+    .form-field label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .form-field input,
+    .form-field select {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(249,250,251,0.14);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.88rem;
+      padding: 0.52rem 0.7rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+      border-color: rgba(247,222,80,0.6);
+      box-shadow: 0 0 0 2px rgba(247,222,80,0.1);
+    }
+
+    .form-field input[type="number"] { font-family: var(--mono); }
+
+    .btn-add {
+      padding: 0.52rem 1.3rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: var(--font);
+      background: linear-gradient(120deg, var(--gold), var(--gold-deep));
+      color: #111827;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.2s;
+      align-self: end;
+    }
+
+    .btn-add:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── FILTERS ── */
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      padding: 0.35rem 0.85rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .filter-pill.active,
+    .filter-pill:hover {
+      border-color: var(--gold);
+      color: var(--gold-soft);
+      background: var(--gold-dim);
+    }
+
+    .filter-search {
+      margin-left: auto;
+      position: relative;
+    }
+
+    .filter-search input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.82rem;
+      padding: 0.38rem 0.85rem 0.38rem 2.1rem;
+      outline: none;
+      width: 200px;
+      transition: border-color 0.2s;
+    }
+
+    .filter-search input:focus { border-color: var(--border-gold); }
+
+    .filter-search::before {
+      content: '🔍';
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      pointer-events: none;
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+    }
+
+    thead th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(5,6,8,0.5);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    thead th:hover { color: var(--gold-soft); }
+    thead th.sorted { color: var(--gold); }
+    thead th.sorted::after { content: ' ↓'; }
+    thead th.sorted.asc::after { content: ' ↑'; }
+    thead th.no-sort { cursor: default; }
+    thead th.no-sort:hover { color: var(--muted); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(247,222,80,0.03); }
+
+    td {
+      padding: 0.78rem 1rem;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+
+    .td-date {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .td-desc { color: var(--text); font-weight: 500; }
+
+    .td-note { font-size: 0.8rem; color: var(--muted); }
+
+    .cat-tag {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .cat-venue     { background: rgba(99,102,241,0.15);  color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .cat-catering  { background: rgba(251,146,60,0.15);  color: #fdba74; border: 1px solid rgba(251,146,60,0.3); }
+    .cat-marketing { background: rgba(236,72,153,0.15);  color: #f9a8d4; border: 1px solid rgba(236,72,153,0.3); }
+    .cat-speaker   { background: rgba(16,185,129,0.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .cat-misc      { background: rgba(156,163,175,0.12); color: #d1d5db; border: 1px solid rgba(156,163,175,0.2); }
+
+    .td-amount {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #f87171;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .td-actions { text-align: right; white-space: nowrap; }
+
+    .btn-del {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 3px 8px;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+
+    .btn-del:hover {
+      background: rgba(239,68,68,0.12);
+      border-color: rgba(239,68,68,0.3);
+      color: #fca5a5;
+    }
+
+    .btn-edit {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 3px 8px;
+      transition: all 0.2s;
+      font-family: var(--font);
+      margin-right: 2px;
+    }
+
+    .btn-edit:hover {
+      background: var(--gold-dim);
+      border-color: var(--border-gold);
+      color: var(--gold-soft);
+    }
+
+    /* ── TOTALS ROW ── */
+    .totals-row td {
+      border-top: 1px solid var(--border-gold);
+      font-weight: 700;
+      background: rgba(247,222,80,0.03);
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+    }
+
+    .totals-row .td-amount { color: var(--gold); font-size: 0.95rem; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      padding: 3.5rem 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── PROGRESS BAR ── */
+    .progress-section {
+      margin-bottom: 2rem;
+    }
+
+    .progress-section h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .progress-bars { display: flex; flex-direction: column; gap: 0.65rem; }
+
+    .progress-item {
+      display: grid;
+      grid-template-columns: 160px 1fr 90px;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .progress-item .p-label {
+      font-size: 0.8rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: rgba(249,250,251,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-item .p-val {
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── EXPORT ── */
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.48rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: var(--font);
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid var(--border-gold);
+      background: var(--gold-dim);
+      color: var(--gold-soft);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .toolbar-btn:hover { background: rgba(247,222,80,0.2); transform: translateY(-1px); }
+
+    /* ── EDIT MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,6,8,0.85);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      width: min(480px, 100%);
+      transform: translateY(16px);
+      transition: transform 0.25s;
+      box-shadow: 0 0 60px rgba(247,222,80,0.07);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 1.4rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 { font-size: 1rem; font-weight: 700; }
+
+    .modal-close {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(249,250,251,0.06);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover { background: rgba(239,68,68,0.12); color: #fca5a5; }
+
+    .modal-body {
+      padding: 1.2rem 1.4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    .modal-body .form-field.full { grid-column: 1 / -1; }
+
+    .modal-footer {
+      padding: 0.9rem 1.4rem 1.2rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-cancel {
+      padding: 0.5rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: var(--font);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover { border-color: rgba(249,250,251,0.25); color: var(--text); }
+
+    .btn-save {
+      padding: 0.5rem 1.3rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: var(--font);
+      background: linear-gradient(120deg, var(--gold), var(--gold-deep));
+      color: #111827;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-save:hover { opacity: 0.88; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      main { padding: 1.5rem 1rem 4rem; }
+      header { padding: 0.75rem 1rem; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .add-form { grid-template-columns: 1fr 1fr; }
+      .add-form .btn-add { grid-column: 1 / -1; width: 100%; }
+      .progress-item { grid-template-columns: 120px 1fr 80px; }
+    }
+
+    @media (max-width: 600px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
+      .summary-card .s-value { font-size: 1.3rem; }
+      .add-form { grid-template-columns: 1fr; padding: 1rem; }
+      .add-form .btn-add { width: 100%; }
+      .filters { gap: 0.4rem; }
+      .filter-search { margin-left: 0; width: 100%; }
+      .filter-search input { width: 100%; }
+      .progress-item { grid-template-columns: 100px 1fr 70px; }
+      .progress-item .p-label { font-size: 0.72rem; }
+      .income-bar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+      .income-bar input { width: 100%; }
+
+      /* modal bottom sheet on mobile */
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal { width: 100%; border-radius: var(--radius) var(--radius) 0 0; border-bottom: none; }
+      .modal-body { grid-template-columns: 1fr; }
+      .modal-body .form-field.full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <a class="logo" href="#">
+    <span class="l1">Lex</span><span class="l2">Xperience</span>
+  </a>
+  <div class="header-right">
+    <span class="badge">Expense Tracker</span>
+    <button class="toolbar-btn" id="exportBtn">⬇ Export CSV</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card income">
+      <div class="s-label">Total Income</div>
+      <div class="s-value" id="sumIncome">₦0</div>
+      <div class="s-sub">Revenue collected</div>
+    </div>
+    <div class="summary-card spent">
+      <div class="s-label">Total Spent</div>
+      <div class="s-value" id="sumSpent">₦0</div>
+      <div class="s-sub">Across all entries</div>
+    </div>
+    <div class="summary-card balance">
+      <div class="s-label">Balance</div>
+      <div class="s-value" id="sumBalance">₦0</div>
+      <div class="s-sub">Income minus expenses</div>
+    </div>
+    <div class="summary-card entries">
+      <div class="s-label">Entries</div>
+      <div class="s-value" id="sumEntries">0</div>
+      <div class="s-sub">Expense records</div>
+    </div>
+  </div>
+
+  <!-- Income Input -->
+  <div class="income-bar">
+    <label for="incomeInput">Total Income (₦)</label>
+    <input type="number" id="incomeInput" placeholder="e.g. 500000" min="0" step="1000" />
+    <span class="income-note">Set your total revenue to track the balance</span>
+  </div>
+
+  <!-- Breakdown by Category -->
+  <div class="progress-section">
+    <h2>Breakdown by Category</h2>
+    <div class="progress-bars" id="progressBars"></div>
+  </div>
+
+  <!-- Add Expense Form -->
+  <div class="section-head">
+    <h2>Expense Log</h2>
+  </div>
+
+  <div class="add-form" id="addForm">
+    <div class="form-field">
+      <label for="f-date">Date</label>
+      <input type="date" id="f-date" />
+    </div>
+    <div class="form-field">
+      <label for="f-desc">Description</label>
+      <input type="text" id="f-desc" placeholder="e.g. Printed banners" />
+    </div>
+    <div class="form-field">
+      <label for="f-cat">Category</label>
+      <select id="f-cat">
+        <option value="venue">Venue & Logistics</option>
+        <option value="catering">Catering & Refreshments</option>
+        <option value="marketing">Marketing & Design</option>
+        <option value="speaker">Speaker & Guest Fees</option>
+        <option value="speaker">Banner</option>
+        <option value="misc">Miscellaneous</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="f-amount">Amount (₦)</label>
+      <input type="number" id="f-amount" placeholder="0" min="0" step="100" />
+    </div>
+    <button class="btn-add" id="addBtn">+ Add</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <button class="filter-pill active" data-cat="all">All</button>
+    <button class="filter-pill" data-cat="venue">Venue</button>
+    <button class="filter-pill" data-cat="catering">Catering</button>
+    <button class="filter-pill" data-cat="marketing">Marketing</button>
+    <button class="filter-pill" data-cat="speaker">Speaker</button>
+    <button class="filter-pill" data-cat="misc">Misc</button>
+    <div class="filter-search">
+      <input type="text" id="searchInput" placeholder="Search…" />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table id="expenseTable">
+        <thead>
+          <tr>
+            <th data-key="date">Date</th>
+            <th data-key="desc">Description</th>
+            <th data-key="cat">Category</th>
+            <th data-key="amount" style="text-align:right">Amount</th>
+            <th class="no-sort" style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── EDIT MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Expense</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-field">
+        <label for="e-date">Date</label>
+        <input type="date" id="e-date" />
+      </div>
+      <div class="form-field">
+        <label for="e-cat">Category</label>
+        <select id="e-cat">
+          <option value="venue">Venue & Logistics</option>
+          <option value="catering">Catering & Refreshments</option>
+          <option value="marketing">Marketing & Design</option>
+          <option value="speaker">Speaker & Guest Fees</option>
+          <option value="misc">Miscellaneous</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <label for="e-desc">Description</label>
+        <input type="text" id="e-desc" />
+      </div>
+      <div class="form-field">
+        <label for="e-amount">Amount (₦)</label>
+        <input type="number" id="e-amount" min="0" step="100" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="modalCancel">Cancel</button>
+      <button class="btn-save" id="modalSave">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'lexXpExpenses';
+  const INCOME_KEY  = 'lexXpIncome';
+
+  const CAT_LABELS = {
+    venue:     'Venue & Logistics',
+    catering:  'Catering & Refreshments',
+    marketing: 'Marketing & Design',
+    speaker:   'Speaker & Guest Fees',
+    misc:      'Miscellaneous',
+  };
+
+  const CAT_COLORS = {
+    venue:     '#818cf8',
+    catering:  '#fb923c',
+    marketing: '#ec4899',
+    speaker:   '#10b981',
+    misc:      '#9ca3af',
+  };
+
+  // ── STATE ────────────────────────────────────────────────────
+  let expenses   = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let income     = Number(localStorage.getItem(INCOME_KEY) || 0);
+  let filterCat  = 'all';
+  let searchQ    = '';
+  let sortKey    = 'date';
+  let sortAsc    = false;
+  let editId     = null;
+
+  // ── INIT ─────────────────────────────────────────────────────
+  const incomeInput = document.getElementById('incomeInput');
+  incomeInput.value = income || '';
+
+  // Set today as default date
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('f-date').value = today;
+
+  incomeInput.addEventListener('input', () => {
+    income = Number(incomeInput.value) || 0;
+    localStorage.setItem(INCOME_KEY, income);
+    updateSummary();
+  });
+
+  // ── SAVE ─────────────────────────────────────────────────────
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+  }
+
+  // ── ADD ──────────────────────────────────────────────────────
+  document.getElementById('addBtn').addEventListener('click', () => {
+    const date   = document.getElementById('f-date').value;
+    const desc   = document.getElementById('f-desc').value.trim();
+    const cat    = document.getElementById('f-cat').value;
+    const amount = Number(document.getElementById('f-amount').value);
+
+    if (!date || !desc || !amount) {
+      alert('Please fill in date, description and amount.');
+      return;
+    }
+
+    expenses.push({ id: Date.now(), date, desc, cat, amount });
+    save();
+
+    // Reset
+    document.getElementById('f-desc').value   = '';
+    document.getElementById('f-amount').value = '';
+    document.getElementById('f-date').value   = today;
+
+    render();
+  });
+
+  // Allow Enter key on amount field to add
+  document.getElementById('f-amount').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addBtn').click();
+  });
+
+  // ── DELETE ───────────────────────────────────────────────────
+  function deleteEntry(id) {
+    if (!confirm('Delete this expense?')) return;
+    expenses = expenses.filter(e => e.id !== id);
+    save();
+    render();
+  }
+
+  // ── EDIT ─────────────────────────────────────────────────────
+  function openEdit(id) {
+    const entry = expenses.find(e => e.id === id);
+    if (!entry) return;
+    editId = id;
+    document.getElementById('e-date').value   = entry.date;
+    document.getElementById('e-desc').value   = entry.desc;
+    document.getElementById('e-cat').value    = entry.cat;
+    document.getElementById('e-amount').value = entry.amount;
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  document.getElementById('modalSave').addEventListener('click', () => {
+    const idx = expenses.findIndex(e => e.id === editId);
+    if (idx === -1) return;
+    expenses[idx].date   = document.getElementById('e-date').value;
+    expenses[idx].desc   = document.getElementById('e-desc').value.trim();
+    expenses[idx].cat    = document.getElementById('e-cat').value;
+    expenses[idx].amount = Number(document.getElementById('e-amount').value);
+    save();
+    closeModal();
+    render();
+  });
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    editId = null;
+  }
+
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // ── FILTERS ──────────────────────────────────────────────────
+  document.querySelector('.filters').addEventListener('click', (e) => {
+    const pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    filterCat = pill.dataset.cat;
+    render();
+  });
+
+  let searchTimeout;
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { searchQ = e.target.value.toLowerCase(); render(); }, 200);
+  });
+
+  // ── SORT ─────────────────────────────────────────────────────
+  document.getElementById('expenseTable').querySelector('thead').addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-key]');
+    if (!th) return;
+    if (sortKey === th.dataset.key) sortAsc = !sortAsc;
+    else { sortKey = th.dataset.key; sortAsc = false; }
+    render();
+  });
+
+  // ── RENDER ───────────────────────────────────────────────────
+  function render() {
+    updateSummary();
+    updateProgress();
+    renderTable();
+  }
+
+  function updateSummary() {
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    const bal   = income - total;
+    document.getElementById('sumIncome').textContent  = fmt(income);
+    document.getElementById('sumSpent').textContent   = fmt(total);
+    document.getElementById('sumBalance').textContent = fmt(bal);
+    document.getElementById('sumEntries').textContent = expenses.length;
+
+    const balEl = document.querySelector('.summary-card.balance .s-value');
+    balEl.style.color = bal >= 0 ? 'var(--gold)' : '#f87171';
+  }
+
+  function updateProgress() {
+    const container = document.getElementById('progressBars');
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+    const bycat = {};
+    Object.keys(CAT_LABELS).forEach(k => bycat[k] = 0);
+    expenses.forEach(e => { bycat[e.cat] = (bycat[e.cat] || 0) + e.amount; });
+
+    if (total === 0) {
+      container.innerHTML = '<span style="font-size:0.82rem;color:var(--muted)">No expenses yet.</span>';
+      return;
+    }
+
+    container.innerHTML = Object.entries(bycat)
+      .filter(([, v]) => v > 0)
+      .sort(([,a],[,b]) => b - a)
+      .map(([cat, val]) => {
+        const pct = Math.round((val / total) * 100);
+        return `
+          <div class="progress-item">
+            <span class="p-label">${CAT_LABELS[cat]}</span>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:${pct}%;background:${CAT_COLORS[cat]}"></div>
+            </div>
+            <span class="p-val">${fmt(val)} (${pct}%)</span>
+          </div>`;
+      }).join('');
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const tfoot = document.getElementById('tableFoot');
+
+    let data = [...expenses];
+
+    // Filter
+    if (filterCat !== 'all') data = data.filter(e => e.cat === filterCat);
+    if (searchQ) data = data.filter(e =>
+      e.desc.toLowerCase().includes(searchQ) ||
+      CAT_LABELS[e.cat].toLowerCase().includes(searchQ)
+    );
+
+    // Sort
+    data.sort((a, b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if (sortKey === 'amount') { av = Number(av); bv = Number(bv); }
+      if (av < bv) return sortAsc ? -1 : 1;
+      if (av > bv) return sortAsc ?  1 : -1;
+      return 0;
+    });
+
+    // Update sort headers
+    document.querySelectorAll('thead th[data-key]').forEach(th => {
+      th.classList.remove('sorted', 'asc');
+      if (th.dataset.key === sortKey) {
+        th.classList.add('sorted');
+        if (sortAsc) th.classList.add('asc');
+      }
+    });
+
+    if (data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>No expenses yet. Add your first entry above.</p>
+            </div>
+          </td>
+        </tr>`;
+      tfoot.innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.map(e => `
+      <tr>
+        <td class="td-date">${formatDate(e.date)}</td>
+        <td class="td-desc">${esc(e.desc)}</td>
+        <td><span class="cat-tag cat-${e.cat}">${CAT_LABELS[e.cat]}</span></td>
+        <td class="td-amount">− ${fmt(e.amount)}</td>
+        <td class="td-actions">
+          <button class="btn-edit" onclick="openEdit(${e.id})">✏ Edit</button>
+          <button class="btn-del" onclick="deleteEntry(${e.id})">✕ Delete</button>
+        </td>
+      </tr>`).join('');
+
+    const filteredTotal = data.reduce((s, e) => s + e.amount, 0);
+    tfoot.innerHTML = `
+      <tr class="totals-row">
+        <td colspan="3" style="font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">
+          ${data.length} entr${data.length === 1 ? 'y' : 'ies'} shown
+        </td>
+        <td class="td-amount">− ${fmt(filteredTotal)}</td>
+        <td></td>
+      </tr>`;
+  }
+
+  // ── EXPORT CSV ───────────────────────────────────────────────
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const rows = [
+      ['Date', 'Description', 'Category', 'Amount (NGN)'],
+      ...expenses.map(e => [e.date, e.desc, CAT_LABELS[e.cat], e.amount]),
+      [],
+      ['', '', 'Total Income', income],
+      ['', '', 'Total Spent', expenses.reduce((s,e)=>s+e.amount,0)],
+      ['', '', 'Balance', income - expenses.reduce((s,e)=>s+e.amount,0)],
+    ];
+    const csv  = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'lex-xperience-expenses-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── UTILS ────────────────────────────────────────────────────
+  function fmt(n) {
+    return '₦' + Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 0 });
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const [y, m, day] = d.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function esc(s) {
+    return String(s||'')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  // Expose to inline onclick
+  window.openEdit    = openEdit;
+  window.deleteEntry = deleteEntry;
+
+  // ── BOOT ─────────────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
