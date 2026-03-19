@@ -544,7 +544,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
     }
 
     const paidAmount     = Number(amount || 0);
-    const expectedAmount = school === 'yes' ? 5000 : 12000;
+    const expectedAmount = school === 'yes' ? 5000 : 17500;
 
     if (paidAmount < expectedAmount) {
       console.warn(`⚠️ Amount mismatch for ${email}: paid ₦${paidAmount}, expected ₦${expectedAmount}`);
