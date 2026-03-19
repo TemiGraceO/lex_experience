@@ -427,9 +427,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (regSection)  regSection.style.display = "block";
         if (verifyStatus) { verifyStatus.textContent = "Upload a clear, legible ABU ID card or admission letter."; verifyStatus.style.color = "#9ca3af"; }
       } else {
-        baseAmount  = 12000;
+        baseAmount  = 17500;
         abuVerified = true;
-        if (paymentText)     paymentText.innerHTML              = "<strong>Non-ABU / Young Professional Ticket:</strong> ₦12,000";
+        if (paymentText)     paymentText.innerHTML              = "<strong>Non-ABU / Young Professional Ticket:</strong> ₦17,500";
         if (schoolNameSection) schoolNameSection.style.display  = "block";
         setTimeout(() => { if (schoolNameInput) schoolNameInput.focus(); }, 100);
       }
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // ── Guard: baseAmount must match what's expected ──
-      const expectedAmount = school === "yes" ? 5000 : 12000;
+      const expectedAmount = school === "yes" ? 5000 : 17500;
       if (baseAmount !== expectedAmount) throw new Error("Payment amount mismatch — please refresh and try again.");
 
       // ── Final duplicate email check ──
