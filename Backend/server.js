@@ -794,13 +794,6 @@ app.post("/encore-register", async (req, res) => {
       return res.status(409).json({ success: false, message: "This email has already been registered for Lex Encore." });
     }
 
-    // Check registered for Xperience
-    const xperience = await Registration.findOne({
-      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
-    });
-    if (!xperience) {
-      return res.status(400).json({ success: false, message: "No Lex Xperience registration found for this email." });
-    }
 
     const paidAmount = Number(amount || 0);
     if (paidAmount < 2000) {
