@@ -184,7 +184,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const emailOk   = emailFmt && !isDup && emailIsValid;
 
     let valid = !!(name && email && school && emailOk);
-    if (school === "yes") valid = valid && uploadedFile !== null && abuVerified;
     if (school === "no")  valid = valid && schoolName.length > 0;
 
     payBtn.disabled      = !valid;
@@ -229,8 +228,161 @@ document.addEventListener("DOMContentLoaded", function () {
       if (innovateSection) innovateSection.style.display = "block";
     }, 400);
   }
+// ─── LEX ENCORE REGISTRATION ─────────────────────────────
+
+const encoreVerifyBtn = $("encoreVerifyBtn");
+const encorePayBtn    = $("encorePayBtn");
+const encoreStatusBox = $("encoreStatusBox");
+const encorePayGroup  = $("encorePayGroup");
+const encoreVerifyGrp = $("encoreVerifyGroup");
+const encoreThanks    = $("encoreThanks");
+const encoreForm      = $("encoreForm");
+
+
+
+if (encoreVerifyBtn) {
+  encoreVerifyBtn.addEventListener("click", async () => {
+    const name     = ($("encore-name")  || {value:""}).value.trim();
+    const email    = ($("encore-email") || {value:""}).value.trim();
+    const nameErr  = $("encore-err-name");
+    const emailErr = $("encore-err-email");
+
+    clearInlineError(nameErr);
+    clearInlineError(emailErr);
+    if (encoreStatusBox) encoreStatusBox.style.display = "none";
+
+    if (!name)  { showInlineError(nameErr,  "Please enter your full name."); return; }
+    if (!email || !email.includes("@")) { showInlineError(emailErr, "Please enter a valid email address."); return; }
+
+    lockForm(encoreForm, "Verifying your registration…");
+    encoreVerifyBtn.disabled = true;
+
+    try {
+      const d1 = await fetchJSON(
+        BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience"
+      );
+      if (!d1.registered) {
+        showStatus(encoreStatusBox,
+          "No Lex Xperience registration found for this email. Please register for Lex Xperience first.",
+          "error"
+        );
+        return;
+      }
+
+      // ✅ Registered for Xperience — show pay button
+      const nameInp  = $("encore-name");
+      const emailInp = $("encore-email");
+      if (nameInp)  { nameInp.setAttribute("readonly", true);  nameInp.classList.add("input-locked"); }
+      if (emailInp) { emailInp.setAttribute("readonly", true); emailInp.classList.add("input-locked"); }
+      if (encoreVerifyGrp) encoreVerifyGrp.style.display = "none";
+      if (encorePayGroup)  encorePayGroup.style.display  = "block";
+
+    } catch (err) {
+      showStatus(encoreStatusBox, "Could not verify at this time. Please try again shortly.", "warn");
+    } finally {
+      unlockForm(encoreForm);
+      encoreVerifyBtn.disabled = false;
+    }
+  });
+}
+
+if (encorePayBtn) {
+  encorePayBtn.addEventListener("click", async () => {
+    const email = ($("encore-email") || {value:""}).value.trim();
+    const name  = ($("encore-name")  || {value:""}).value.trim();
+
+    if (!email || !name) {
+      showStatus(encoreStatusBox, "Missing name or email. Please verify again.", "error");
+      return;
+    }
+
+    const origHTML        = encorePayBtn.innerHTML;
+    encorePayBtn.disabled = true;
+    encorePayBtn.innerHTML = "Opening payment…";
+
+    let paymentRef = null;
+
+    try {
+      let pr;
+      try {
+        pr = await openPaystack({ email, amount: 2000 });
+      } catch (err) {
+        if (err.message === "Payment cancelled") {
+          encorePayBtn.innerHTML = origHTML;
+          encorePayBtn.disabled  = false;
+          return;
+        }
+        throw err;
+      }
+
+      paymentRef = pr.reference;
+
+      lockForm(encoreForm, "Verifying payment…");
+      encorePayBtn.innerHTML = "Verifying payment…";
+      await verifyPayment(paymentRef, 2000);
+
+      lockForm(encoreForm, "Saving your registration…");
+      encorePayBtn.innerHTML = "Saving…";
+
+      const fd = new FormData();
+      fd.append("name",      name);
+      fd.append("email",     email);
+      fd.append("reference", paymentRef);
+      fd.append("amount",    "2000");
+
+      let result;
+      try {
+        result = await fetchJSON(BACKEND_URL + "/encore-register", { method: "POST", body: fd });
+      } catch (fetchErr) {
+        unlockForm(encoreForm);
+        if (encorePayGroup) encorePayGroup.style.display = "none";
+        if (encoreThanks) {
+          encoreThanks.style.display = "block";
+          encoreThanks.innerHTML = `
+            <strong style="color:#f7de50;">Your payment was received!</strong><br><br>
+            However we had trouble saving your registration due to a network issue.
+            Please email us at <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;">lexxperience01@gmail.com</a>
+            with your payment reference:<br><br>
+            <code style="background:rgba(247,222,80,0.15);padding:4px 8px;border-radius:4px;color:#f7de50;">${paymentRef}</code><br><br>
+            We will manually complete your registration. Sorry for the inconvenience!
+          `;
+          encoreThanks.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
+
+      if (!result.success) throw new Error(result.message || "Registration failed.");
+
+      unlockForm(encoreForm);
+      if (encorePayGroup) encorePayGroup.style.display = "none";
+      if (encoreThanks) {
+        encoreThanks.style.display = "block";
+        encoreThanks.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+    } catch (err) {
+      unlockForm(encoreForm);
+      if (err.message !== "Payment cancelled") {
+        showStatus(encoreStatusBox, "Error: " + err.message, "error");
+        if (encoreStatusBox) encoreStatusBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } finally {
+      encorePayBtn.disabled  = false;
+      encorePayBtn.innerHTML = origHTML;
+    }
+  });
+}
 
   // ─── ID PREVIEW RESET ────────────────────────────────────
+  function updatePaymentText() {
+  if (!paymentText) return;
+  const school = schoolSelectEl ? schoolSelectEl.value : "";
+  if (school === "yes") {
+    paymentText.innerHTML = "<strong>ABU Student Ticket:</strong> ₦5,000";
+  } else if (school === "no") {
+    paymentText.innerHTML = "<strong>Non-ABU / Young Professional Ticket:</strong> ₦17,500";
+  }
+}
 
   function resetPreview() {
     if (idPreview)      idPreview.style.display   = "none";
@@ -406,38 +558,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ─── SCHOOL SELECT ────────────────────────────────────────
 
-  if (schoolSelectEl) {
-    schoolSelectEl.addEventListener("change", () => {
-      const value = schoolSelectEl.value;
+if (schoolSelectEl) {
+  schoolSelectEl.addEventListener("change", () => {
+    const value = schoolSelectEl.value;
 
-      if (paymentSection)    paymentSection.style.display    = "none";
-      if (regSection)        regSection.style.display        = "none";
-      if (schoolNameSection) schoolNameSection.style.display = "none";
-      resetPreview();
-      uploadedFile = null;
-      abuVerified  = false;
-      if (schoolNameInput) schoolNameInput.value = "";
-      clearInlineError($("schoolNameError"));
+    if (paymentSection)    paymentSection.style.display    = "none";
+    if (schoolNameSection) schoolNameSection.style.display = "none";
+    if ($("encoreSection")) $("encoreSection").style.display = "none";
+    if (schoolNameInput) schoolNameInput.value = "";
+    clearInlineError($("schoolNameError"));
 
-      if (!value) { if (payBtn) payBtn.disabled = true; return; }
+    if (!value) { if (payBtn) payBtn.disabled = true; return; }
 
-      if (value === "yes") {
-        baseAmount = 5000;
-        if (paymentText) paymentText.innerHTML = "<strong>ABU Student Ticket:</strong> ₦5,000";
-        if (regSection)  regSection.style.display = "block";
-        if (verifyStatus) { verifyStatus.textContent = "Upload a clear, legible ABU ID card or admission letter."; verifyStatus.style.color = "#9ca3af"; }
-      } else {
-        baseAmount  = 17500;
-        abuVerified = true;
-        if (paymentText)     paymentText.innerHTML              = "<strong>Non-ABU / Young Professional Ticket:</strong> ₦17,500";
-        if (schoolNameSection) schoolNameSection.style.display  = "block";
-        setTimeout(() => { if (schoolNameInput) schoolNameInput.focus(); }, 100);
-      }
+    if (value === "yes") {
+      baseAmount = 5000;
+    } else {
+      baseAmount = 17500;
+    }
 
-      if (paymentSection) paymentSection.style.display = "block";
-      checkFormValidity();
-    });
-  }
+    if (schoolNameSection && value === "no") schoolNameSection.style.display = "block";
+    if ($("encoreSection"))  $("encoreSection").style.display = "block";
+    if (paymentSection)      paymentSection.style.display    = "block";
+
+    updatePaymentText();
+    checkFormValidity();
+  });
+}
 
   // ─── INPUT LISTENERS (Form A) ─────────────────────────────
 
@@ -477,7 +623,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // ── Basic guards ──
       if (!name || !email || !school) throw new Error("Please fill in your name, email, and select school type.");
-      if (school === "yes" && !abuVerified) throw new Error("Please upload and verify your ABU ID first.");
       if (school === "no"  && !schoolName) {
         showInlineError($("schoolNameError"), "Please enter the name of your school.");
         schoolNameInput && schoolNameInput.focus();
@@ -534,7 +679,6 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append("interest",         interest);
       formData.append("paymentReference", paymentResult.reference);
       formData.append("amount",           String(expectedAmount));   // use expected, not baseAmount
-      if (school === "yes" && uploadedFile) formData.append("regNumber", uploadedFile);
 
       const result = await fetchJSON(BACKEND_URL + "/register", { method: "POST", body: formData });
       if (!result.success) throw new Error(result.message || "Registration failed. Please try again.");
@@ -603,6 +747,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
+        // Check they are registered for Xperience
         // Check they are registered for Xperience
         const d2 = await fetchJSON(
           BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience"

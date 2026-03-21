@@ -84,7 +84,7 @@ const registrationSchema = new mongoose.Schema({
 });
 
 const innovateSchema = new mongoose.Schema({
-  email: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   name: String,
   reference: { type: String, required: true },
   amount: { type: Number, required: true },
@@ -108,6 +108,14 @@ const innovateSchema = new mongoose.Schema({
   pitchDeckUrl: String,
   createdAt: { type: Date, default: Date.now },
 });
+const encoreSchema = new mongoose.Schema({
+  name:      { type: String, required: true },
+  email:     { type: String, required: true },
+  reference: { type: String, required: true },
+  amount:    { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+const EncoreRegistration = mongoose.model("EncoreRegistration", encoreSchema);
 
 const Registration = mongoose.model("Registration", registrationSchema);
 const InnovateRegistration = mongoose.model("InnovateRegistration", innovateSchema);
@@ -124,12 +132,16 @@ app.get("/check-email", async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (type === "innovate") {
-      const existing = await InnovateRegistration.findOne({
-        email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
-      });
+      const existing = await InnovateRegistration.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } });
       return res.json({ registered: !!existing });
     }
 
+    if (type === "encore") {
+      const existing = await EncoreRegistration.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } });
+      return res.json({ registered: !!existing });
+    }
+
+    // Default: xperience
     const existing = await Registration.findOne({
       email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
     });
@@ -760,6 +772,118 @@ app.get("/get-file/:email", async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ success: false, message: "Error" });
+  }
+});
+
+// ✅ LEX ENCORE REGISTRATION
+app.post("/encore-register", async (req, res) => {
+  try {
+    const { name, email, reference, amount } = req.body;
+
+    if (!name || !email || !reference) {
+      return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check already registered for Encore
+    const existing = await EncoreRegistration.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
+    });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "This email has already been registered for Lex Encore." });
+    }
+
+    // Check registered for Xperience
+    const xperience = await Registration.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') }
+    });
+    if (!xperience) {
+      return res.status(400).json({ success: false, message: "No Lex Xperience registration found for this email." });
+    }
+
+    const paidAmount = Number(amount || 0);
+    if (paidAmount < 2000) {
+      return res.status(400).json({ success: false, message: "Incorrect payment amount. Expected ₦2,000." });
+    }
+
+    const doc = await EncoreRegistration.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      reference,
+      amount: paidAmount,
+    });
+
+    res.json({ success: true, data: doc });
+
+    // Confirmation email
+    setImmediate(() => {
+      sendLexEmail({
+        to: normalizedEmail,
+        subject: "Lex Encore 2026 — You're Confirmed!",
+        html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#050608;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#050608;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background:linear-gradient(135deg,#0e1015,#151826);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-bottom:none;">
+          <span style="font-size:28px;font-weight:800;color:#f9fafb;">Lex</span><span style="font-size:28px;font-weight:800;color:#f7de50;">Xperience</span>
+          <p style="margin:8px 0 0;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#9ca3af;">Law • Innovation • Northern Nigeria</p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0e1015;padding:40px;border:1px solid rgba(247,222,80,0.2);border-top:none;border-bottom:none;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <span style="display:inline-block;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);color:#86efac;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">✓ Lex Encore Confirmed</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;">See you on Day 2, ${name.trim()}!</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
+            Your spot at <strong style="color:#f2e7a2;">Lex Encore</strong> — Law, Media &amp; Entertainment in Society — is confirmed.
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
+              <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">🎭 Your Ticket</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Encore — Day 2</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Date</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">April 1st, 2026</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Venue</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦2,000</td></tr>
+                <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Reference</td><td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${reference}</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <p style="font-size:14px;color:#9ca3af;line-height:1.7;margin:0;">Questions? <a href="mailto:lexxperience01@gmail.com" style="color:#f7de50;text-decoration:none;">lexxperience01@gmail.com</a></p>
+        </td></tr>
+        <tr><td style="background:linear-gradient(90deg,transparent,#f7de50,transparent);height:2px;border-left:1px solid rgba(247,222,80,0.2);border-right:1px solid rgba(247,222,80,0.2);"></td></tr>
+        <tr><td style="background:#0a0b0f;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(247,222,80,0.2);border-top:none;">
+          <p style="margin:0;font-size:12px;color:#6b7280;">© 2026 Lex Xperience. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      });
+    });
+
+  } catch (err) {
+    console.error("❌ encore-register error:", err);
+    if (err.code === 11000) {
+      return res.status(409).json({ success: false, message: "This email has already been registered for Lex Encore." });
+    }
+    return res.status(500).json({ success: false, message: "Registration failed. Please try again." });
+  }
+});
+
+// ✅ ADMIN — Get all Encore registrations
+app.get("/admin/encore", async (req, res) => {
+  try {
+    const data = await EncoreRegistration.find({}, '-reference').sort({ createdAt: -1 });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
