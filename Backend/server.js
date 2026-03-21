@@ -627,7 +627,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             <span style="display:inline-block;background:rgba(247,222,80,0.12);border:1px solid rgba(247,222,80,0.35);color:#f7de50;font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:6px 18px;border-radius:999px;">Registration Received</span>
           </div>
           <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#f9fafb;line-height:1.3;">Hi ${registrationData.name},</h1>
-          <p style="margin:0 0 20px;font-size:15px;color:#9ca3af;line-height:1.7;">Thank you for registering for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span>. We've received your details and your ABU ID card is currently under review.</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#9ca3af;line-height:1.7;">Thank you for registering for <span style="color:#f2e7a2;font-weight:600;">Lex Xperience 2026</span>. We've received your details and your details are currently under review.</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
             <tr><td style="background:rgba(247,222,80,0.06);border:1px solid rgba(247,222,80,0.25);border-radius:12px;padding:20px 24px;">
               <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">What happens next?</p>
