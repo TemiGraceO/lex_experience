@@ -230,18 +230,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 // ─── LEX ENCORE REGISTRATION ─────────────────────────────
 
-const encoreVerifyBtn = $("encoreVerifyBtn");
 const encorePayBtn    = $("encorePayBtn");
 const encoreStatusBox = $("encoreStatusBox");
 const encorePayGroup  = $("encorePayGroup");
-const encoreVerifyGrp = $("encoreVerifyGroup");
 const encoreThanks    = $("encoreThanks");
 const encoreForm      = $("encoreForm");
 
-
-
-if (encoreVerifyBtn) {
-  encoreVerifyBtn.addEventListener("click", async () => {
+if (encorePayBtn) {
+  encorePayBtn.addEventListener("click", async () => {
     const name     = ($("encore-name")  || {value:""}).value.trim();
     const email    = ($("encore-email") || {value:""}).value.trim();
     const nameErr  = $("encore-err-name");
@@ -251,50 +247,9 @@ if (encoreVerifyBtn) {
     clearInlineError(emailErr);
     if (encoreStatusBox) encoreStatusBox.style.display = "none";
 
+    // Basic validation
     if (!name)  { showInlineError(nameErr,  "Please enter your full name."); return; }
     if (!email || !email.includes("@")) { showInlineError(emailErr, "Please enter a valid email address."); return; }
-
-    lockForm(encoreForm, "Verifying your registration…");
-    encoreVerifyBtn.disabled = true;
-
-    try {
-      const d1 = await fetchJSON(
-        BACKEND_URL + "/check-email?email=" + encodeURIComponent(email) + "&type=xperience"
-      );
-      if (!d1.registered) {
-        showStatus(encoreStatusBox,
-          "No Lex Xperience registration found for this email. Please register for Lex Xperience first.",
-          "error"
-        );
-        return;
-      }
-
-      // ✅ Registered for Xperience — show pay button
-      const nameInp  = $("encore-name");
-      const emailInp = $("encore-email");
-      if (nameInp)  { nameInp.setAttribute("readonly", true);  nameInp.classList.add("input-locked"); }
-      if (emailInp) { emailInp.setAttribute("readonly", true); emailInp.classList.add("input-locked"); }
-      if (encoreVerifyGrp) encoreVerifyGrp.style.display = "none";
-      if (encorePayGroup)  encorePayGroup.style.display  = "block";
-
-    } catch (err) {
-      showStatus(encoreStatusBox, "Could not verify at this time. Please try again shortly.", "warn");
-    } finally {
-      unlockForm(encoreForm);
-      encoreVerifyBtn.disabled = false;
-    }
-  });
-}
-
-if (encorePayBtn) {
-  encorePayBtn.addEventListener("click", async () => {
-    const email = ($("encore-email") || {value:""}).value.trim();
-    const name  = ($("encore-name")  || {value:""}).value.trim();
-
-    if (!email || !name) {
-      showStatus(encoreStatusBox, "Missing name or email. Please verify again.", "error");
-      return;
-    }
 
     const origHTML        = encorePayBtn.innerHTML;
     encorePayBtn.disabled = true;
