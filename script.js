@@ -279,12 +279,6 @@ if (encorePayBtn) {
       lockForm(encoreForm, "Saving your registration…");
       encorePayBtn.innerHTML = "Saving…";
 
-      const fd = new FormData();
-      fd.append("name",      name);
-      fd.append("email",     email);
-      fd.append("reference", paymentRef);
-      fd.append("amount",    "2000");
-
       let result;
 try {
   result = await fetchJSON(BACKEND_URL + "/encore-register", {
