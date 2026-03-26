@@ -1,409 +1,307 @@
+<!-- 
+=================================================================
+ADMIN DASHBOARD PATCH — Lex Encore tab
+=================================================================
+INSTRUCTIONS:
+  1. Add the Encore stat card to your stats-grid (see CHANGE 1)
+  2. Add the Encore tab button (see CHANGE 2)
+  3. Add the Encore panel HTML (see CHANGE 3)
+  4. Add the JS changes in the <script> block (see CHANGE 4)
+=================================================================
+-->
+
+<!-- ═══════════════════════════════════════════════════
+     CHANGE 1 — Add Encore stat card
+     Place this AFTER the existing "Total Revenue" stat card
+     ═══════════════════════════════════════════════════ -->
+<!--
+<div class="stat-card">
+  <div class="stat-label">Lex Encore</div>
+  <div class="stat-value" id="statEncore">—</div>
+  <div class="stat-sub">₦2,000 each</div>
+</div>
+-->
+
+
+<!-- ═══════════════════════════════════════════════════
+     CHANGE 2 — Add Encore tab button
+     Place this AFTER the existing "Lex Innovate" tab button
+     ═══════════════════════════════════════════════════ -->
+<!--
+<button class="tab" onclick="switchTab('encore')">Lex Encore</button>
+-->
+
+
+<!-- ═══════════════════════════════════════════════════
+     CHANGE 3 — Add Encore panel
+     Place this AFTER the closing </div> of panel-innovate
+     ═══════════════════════════════════════════════════ -->
+<!--
+<div class="section-panel" id="panel-encore">
+  <div class="search-bar">
+    <input type="text" id="encoreSearch" placeholder="Search by name or email..."
+           oninput="filterTable('encore')" />
+  </div>
+  <div class="table-wrap">
+    <div class="loading" id="encoreLoading">Loading...</div>
+    <table id="encoreTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Amount Paid</th>
+          <th>Registered</th>
+        </tr>
+      </thead>
+      <tbody id="encoreBody"></tbody>
+    </table>
+    <div class="card-list" id="encoreCards"></div>
+    <div class="empty-state" id="encoreEmpty" style="display:none;">
+      No Encore registrations yet.
+    </div>
+  </div>
+</div>
+-->
+
+
+<!-- ═══════════════════════════════════════════════════
+     CHANGE 4 — JS additions
+     Add these to your existing <script> block
+     ═══════════════════════════════════════════════════ -->
+<script>
+/*
+  ── ADD to module-level state ──
+  let allEncore = [];
+
+  ── REPLACE loadAll() with this version ──
+  async function loadAll() {
+    await Promise.all([loadXperience(), loadInnovate(), loadEncore()]);
+    updateStats();
+  }
+
+  ── ADD loadEncore() function ──
+  async function loadEncore() {
+    try {
+      const res  = await fetch(BACKEND_URL + "/admin/encore");
+      const data = await res.json();
+      allEncore = data.data || [];
+      renderEncore();
+    } catch(e) {
+      document.getElementById("encoreLoading").textContent = "Failed to load. Check backend.";
+    }
+  }
+
+  ── ADD renderEncore() function ──
+  function renderEncore(filter = "") {
+    const list = allEncore.filter(r => matches(r, filter));
+    renderTable('encore', list, renderEncoreRow, renderEncoreCard);
+  }
+
+  ── ADD renderEncoreRow() function ──
+  function renderEncoreRow(r, i) {
+    return `<tr>
+      <td style="color:var(--muted)">${i}</td>
+      <td><strong>${esc(r.name || '—')}</strong></td>
+      <td style="color:var(--muted)">${esc(r.email)}</td>
+      <td class="amount">₦${Number(r.amount || 0).toLocaleString()}</td>
+      <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
+    </tr>`;
+  }
+
+  ── ADD renderEncoreCard() function (for mobile) ──
+  function renderEncoreCard(r, i) {
+    return `<div class="reg-card">
+      <div class="reg-card-name">${esc(r.name || '—')}</div>
+      <div class="reg-card-email">${esc(r.email)}</div>
+      <div class="reg-card-row"><span>Amount</span><span class="amount">₦${Number(r.amount || 0).toLocaleString()}</span></div>
+      <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
+    </div>`;
+  }
+
+  ── REPLACE updateStats() with this version (adds Encore count + revenue) ──
+  function updateStats() {
+    const abu    = allXperience.filter(r => r.school === 'yes');
+    const nonAbu = allXperience.filter(r => r.school === 'no');
+    const total  = allXperience.length;
+
+    const revenue =
+      abu.reduce((s, r)       => s + Number(r.registrationPayment?.amount || 0), 0) +
+      nonAbu.reduce((s, r)    => s + Number(r.registrationPayment?.amount || 0), 0) +
+      allInnovate.reduce((s, r) => s + Number(r.amount || 0), 0) +
+      allEncore.reduce((s, r)   => s + Number(r.amount || 0), 0);
+
+    document.getElementById("statTotal").textContent    = total;
+    document.getElementById("statAbu").textContent      = abu.length;
+    document.getElementById("statNonAbu").textContent   = nonAbu.length;
+    document.getElementById("statInnovate").textContent = allInnovate.length;
+    document.getElementById("statEncore").textContent   = allEncore.length;
+    document.getElementById("statRevenue").textContent  = "₦" + revenue.toLocaleString();
+  }
+
+  ── UPDATE filterTable() to handle 'encore' ──
+  function filterTable(type) {
+    if (type === 'xperience') {
+      const q = document.getElementById('xperienceSearch').value.toLowerCase();
+      renderXperience(q);
+    } else if (type === 'encore') {
+      const q = document.getElementById('encoreSearch').value.toLowerCase();
+      renderEncore(q);
+    } else {
+      const q = document.getElementById('innovateSearch').value.toLowerCase();
+      renderInnovate(q);
+    }
+  }
+*/
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     FULL READY-TO-USE ADMIN.HTML BELOW
+     (copy this entire file to replace your admin.html)
+     ═══════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lex Xperience — Admin Dashboard</title>
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
-
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --gold: #f7de50;
-      --gold-soft: #f2e7a2;
-      --gold-dim: rgba(247,222,80,0.15);
-      --bg: #07080c;
-      --bg2: #0e1015;
-      --bg3: #141821;
-      --border: rgba(247,222,80,0.15);
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --red: #f87171;
-      --green: #4ade80;
+      --gold: #f7de50; --gold-soft: #f2e7a2; --gold-dim: rgba(247,222,80,0.15);
+      --bg: #07080c; --bg2: #0e1015; --bg3: #141821;
+      --border: rgba(247,222,80,0.15); --text: #f9fafb; --muted: #9ca3af;
+      --red: #f87171; --green: #4ade80;
     }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-    }
-
-    /* ── LOGIN ── */
+    /* LOGIN */
     #loginScreen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
       background: radial-gradient(ellipse at 50% 0%, rgba(247,222,80,0.08) 0%, transparent 70%);
     }
-
     .login-box {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 48px 40px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 48px 40px; width: 100%; max-width: 400px; text-align: center;
     }
-
-    .login-logo {
-      font-family: 'Cinzel', serif;
-      font-size: 26px;
-      margin-bottom: 8px;
-    }
+    .login-logo { font-family: 'Cinzel', serif; font-size: 26px; margin-bottom: 8px; }
     .login-logo span { color: var(--gold); }
-
-    .login-sub {
-      font-size: 12px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 36px;
-    }
-
+    .login-sub { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
     .login-box input {
-      width: 100%;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      margin-bottom: 12px;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+      margin-bottom: 12px; outline: none; transition: border-color 0.2s;
     }
     .login-box input:focus { border-color: var(--gold); }
-
     .login-btn {
-      width: 100%;
-      background: var(--gold);
-      color: #07080c;
-      border: none;
-      border-radius: 8px;
-      padding: 13px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 4px;
-      transition: opacity 0.2s;
+      width: 100%; background: var(--gold); color: #07080c; border: none; border-radius: 8px;
+      padding: 13px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer; margin-top: 4px; transition: opacity 0.2s;
     }
     .login-btn:hover { opacity: 0.88; }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
 
-    .login-error {
-      color: var(--red);
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
-    }
-
-    /* ── DASHBOARD ── */
+    /* DASHBOARD */
     #dashboard { display: none; }
-
     .topbar {
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100;
     }
-
-    .topbar-logo {
-      font-family: 'Cinzel', serif;
-      font-size: 20px;
-    }
+    .topbar-logo { font-family: 'Cinzel', serif; font-size: 20px; }
     .topbar-logo span { color: var(--gold); }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
     .logout-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.2s;
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all 0.2s;
     }
     .logout-btn:hover { border-color: var(--gold); color: var(--gold); }
-
     .refresh-btn {
-      background: var(--gold-dim);
-      border: 1px solid var(--border);
-      color: var(--gold);
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.2s;
+      background: var(--gold-dim); border: 1px solid var(--border); color: var(--gold);
+      border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all 0.2s;
     }
     .refresh-btn:hover { background: rgba(247,222,80,0.25); }
-
     .main { padding: 32px; max-width: 1300px; margin: 0 auto; }
 
-    /* ── STATS ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 36px;
-    }
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 36px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; }
+    .stat-label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 600; color: var(--gold); font-family: 'Cinzel', serif; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-    .stat-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 24px;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .stat-value {
-      font-size: 28px;
-      font-weight: 600;
-      color: var(--gold);
-      font-family: 'Cinzel', serif;
-    }
-
-    .stat-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    /* ── TABS ── */
+    /* TABS */
     .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 4px;
-      width: fit-content;
+      display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content;
     }
-
     .tab {
-      padding: 8px 20px;
-      border-radius: 7px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.2s;
+      padding: 8px 20px; border-radius: 7px; font-size: 14px; font-weight: 500; cursor: pointer;
+      border: none; background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; transition: all 0.2s;
     }
-    .tab.active {
-      background: var(--gold);
-      color: #07080c;
-      font-weight: 600;
-    }
+    .tab.active { background: var(--gold); color: #07080c; font-weight: 600; }
 
-    /* ── SUB TABS ── */
-    .sub-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 20px;
-    }
-
+    /* SUB TABS */
+    .sub-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
     .sub-tab {
-      padding: 6px 16px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.2s;
+      padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; transition: all 0.2s;
     }
-    .sub-tab.active {
-      border-color: var(--gold);
-      color: var(--gold);
-      background: var(--gold-dim);
-    }
+    .sub-tab.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
 
-    /* ── SEARCH ── */
-    .search-bar {
-      margin-bottom: 20px;
-    }
-
+    /* SEARCH */
+    .search-bar { margin-bottom: 20px; }
     .search-bar input {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 16px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      width: 100%;
-      max-width: 360px;
-      outline: none;
-      transition: border-color 0.2s;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+      width: 100%; max-width: 360px; outline: none; transition: border-color 0.2s;
     }
     .search-bar input:focus { border-color: var(--gold); }
     .search-bar input::placeholder { color: var(--muted); }
 
-    /* ── TABLE ── */
-    .table-wrap {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead {
-      background: var(--bg3);
-    }
-
-    th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 500;
-      border-bottom: 1px solid var(--border);
-    }
-
-    td {
-      padding: 14px 16px;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(247,222,80,0.06);
-      vertical-align: middle;
-    }
-
+    /* TABLE */
+    .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--bg3); }
+    th { padding: 12px 16px; text-align: left; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(247,222,80,0.06); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-
     tr:hover td { background: rgba(247,222,80,0.03); }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .badge-abu {
-      background: rgba(96,165,250,0.12);
-      color: #93c5fd;
-      border: 1px solid rgba(96,165,250,0.25);
-    }
-
-    .badge-nonaby {
-      background: rgba(167,139,250,0.12);
-      color: #c4b5fd;
-      border: 1px solid rgba(167,139,250,0.25);
-    }
-
-    .badge-innovate {
-      background: rgba(34,197,94,0.12);
-      color: #86efac;
-      border: 1px solid rgba(34,197,94,0.25);
-    }
-
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge-abu    { background: rgba(96,165,250,0.12);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.25); }
+    .badge-nonaby { background: rgba(167,139,250,0.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.25); }
+    .badge-encore { background: rgba(251,191,36,0.12);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
     .amount { color: var(--gold); font-weight: 600; }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--muted);
-    }
-
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
     .section-panel { display: none; }
     .section-panel.active { display: block; }
 
-    /* ── MOBILE CARD VIEW ── */
+    /* MOBILE CARD VIEW */
     @media (max-width: 640px) {
       .main { padding: 12px; }
       .topbar { padding: 12px 16px; }
       .topbar-logo { font-size: 16px; }
-
       .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
       .stat-card { padding: 14px 16px; }
       .stat-value { font-size: 22px; }
-
       .tabs { width: 100%; }
       .tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
-
       .search-bar input { max-width: 100%; }
-
-      /* Hide table, show cards */
       table { display: none !important; }
       .card-list { display: block; }
-
-      .reg-card {
-        background: var(--bg3);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 14px 16px;
-        margin-bottom: 10px;
-      }
-      .reg-card-name {
-        font-weight: 600;
-        font-size: 15px;
-        margin-bottom: 4px;
-      }
-      .reg-card-email {
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 8px;
-        word-break: break-all;
-      }
-      .reg-card-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 13px;
-        color: var(--muted);
-        margin-top: 4px;
-      }
+      .reg-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+      .reg-card-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+      .reg-card-email { font-size: 13px; color: var(--muted); margin-bottom: 8px; word-break: break-all; }
+      .reg-card-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 4px; }
       .reg-card-row span:last-child { color: var(--text); }
       .reg-card-row .amount { color: var(--gold); font-weight: 600; }
     }
-
-    @media (min-width: 641px) {
-      .card-list { display: none; }
-    }
+    @media (min-width: 641px) { .card-list { display: none; } }
   </style>
 </head>
 <body>
@@ -446,13 +344,19 @@
       <div class="stat-card">
         <div class="stat-label">Non-ABU</div>
         <div class="stat-value" id="statNonAbu">—</div>
-        <div class="stat-sub">₦17,500 each </div>
-                <div class="stat-sub">From 19th March 2026</div>
+        <div class="stat-sub">₦17,500 each</div>
+        <div class="stat-sub">From 19th March 2026</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Lex Innovate</div>
         <div class="stat-value" id="statInnovate">—</div>
         <div class="stat-sub">₦20,000 each</div>
+      </div>
+      <!-- ★ NEW: Encore stat card -->
+      <div class="stat-card">
+        <div class="stat-label">Lex Encore</div>
+        <div class="stat-value" id="statEncore">—</div>
+        <div class="stat-sub">₦2,000 each</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Revenue</div>
@@ -460,64 +364,45 @@
         <div class="stat-sub">All payments</div>
       </div>
       <div class="stat-card">
-        <button class="refresh-btn" ><a href="calculate.html"style="border: 1px solid var(--border-gold); color: var(--gold-soft); text-decoration: none;">See expenses so far</a></button>
+        <button class="refresh-btn"><a href="calculate.html" style="border:1px solid var(--border-gold);color:var(--gold-soft);text-decoration:none;">See expenses so far</a></button>
       </div>
     </div>
 
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('xperience')">Lex Xperience</button>
-      <button class="tab" onclick="switchTab('innovate')">Lex Innovate</button>
+      <button class="tab active" onclick="switchTab('xperience', event)">Lex Xperience</button>
+      <button class="tab" onclick="switchTab('innovate', event)">Lex Innovate</button>
+      <!-- ★ NEW: Encore tab -->
+      <button class="tab" onclick="switchTab('encore', event)">Lex Encore</button>
     </div>
 
     <!-- LEX XPERIENCE PANEL -->
     <div class="section-panel active" id="panel-xperience">
       <div class="sub-tabs">
-        <button class="sub-tab active" onclick="switchSubTab('abu')">ABU Students</button>
-        <button class="sub-tab" onclick="switchSubTab('nonAbu')">Non-ABU Students</button>
+        <button class="sub-tab active" onclick="switchSubTab('abu', event)">ABU Students</button>
+        <button class="sub-tab" onclick="switchSubTab('nonAbu', event)">Non-ABU Students</button>
       </div>
-
       <div class="search-bar">
         <input type="text" id="xperienceSearch" placeholder="Search by name or email..." oninput="filterTable('xperience')" />
       </div>
-
       <!-- ABU TABLE -->
       <div id="panel-abu" class="section-panel active">
         <div class="table-wrap">
           <div class="loading" id="abuLoading">Loading...</div>
           <table id="abuTable" style="display:none;">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Amount Paid</th>
-                <th>Registered</th>
-                <th>Type</th>
-              </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Amount Paid</th><th>Registered</th><th>Type</th></tr></thead>
             <tbody id="abuBody"></tbody>
           </table>
           <div class="card-list" id="abuCards"></div>
           <div class="empty-state" id="abuEmpty" style="display:none;">No ABU students registered yet.</div>
         </div>
       </div>
-
       <!-- NON-ABU TABLE -->
       <div id="panel-nonAbu" class="section-panel">
         <div class="table-wrap">
           <div class="loading" id="nonAbuLoading">Loading...</div>
           <table id="nonAbuTable" style="display:none;">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Institution</th>
-                <th>Amount Paid</th>
-                <th>Registered</th>
-              </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Institution</th><th>Amount Paid</th><th>Registered</th></tr></thead>
             <tbody id="nonAbuBody"></tbody>
           </table>
           <div class="card-list" id="nonAbuCards"></div>
@@ -534,15 +419,7 @@
       <div class="table-wrap">
         <div class="loading" id="innovateLoading">Loading...</div>
         <table id="innovateTable" style="display:none;">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Amount Paid</th>
-              <th>Registered</th>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Amount Paid</th><th>Registered</th></tr></thead>
           <tbody id="innovateBody"></tbody>
         </table>
         <div class="card-list" id="innovateCards"></div>
@@ -550,15 +427,32 @@
       </div>
     </div>
 
+    <!-- ★ NEW: LEX ENCORE PANEL -->
+    <div class="section-panel" id="panel-encore">
+      <div class="search-bar">
+        <input type="text" id="encoreSearch" placeholder="Search by name or email..." oninput="filterTable('encore')" />
+      </div>
+      <div class="table-wrap">
+        <div class="loading" id="encoreLoading">Loading...</div>
+        <table id="encoreTable" style="display:none;">
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Amount Paid</th><th>Registered</th></tr></thead>
+          <tbody id="encoreBody"></tbody>
+        </table>
+        <div class="card-list" id="encoreCards"></div>
+        <div class="empty-state" id="encoreEmpty" style="display:none;">No Encore registrations yet.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-  const BACKEND_URL = "https://lex-xperience-backend.onrender.com";
+  const BACKEND_URL   = "https://lex-xperience-backend.onrender.com";
   const ADMIN_PASSWORD = "LexAdmin2026";
 
   let allXperience = [];
   let allInnovate  = [];
+  let allEncore    = [];   // ★ NEW
   let currentTab    = 'xperience';
   let currentSubTab = 'abu';
 
@@ -573,11 +467,9 @@
       document.getElementById("loginError").style.display = "block";
     }
   }
-
   document.getElementById("passwordInput").addEventListener("keydown", function(e) {
     if (e.key === "Enter") login();
   });
-
   function logout() {
     document.getElementById("loginScreen").style.display = "flex";
     document.getElementById("dashboard").style.display = "none";
@@ -586,7 +478,7 @@
 
   // ── LOAD DATA ──
   async function loadAll() {
-    await Promise.all([loadXperience(), loadInnovate()]);
+    await Promise.all([loadXperience(), loadInnovate(), loadEncore()]);
     updateStats();
   }
 
@@ -612,6 +504,18 @@
     }
   }
 
+  // ★ NEW
+  async function loadEncore() {
+    try {
+      const res  = await fetch(BACKEND_URL + "/admin/encore");
+      const data = await res.json();
+      allEncore = data.data || [];
+      renderEncore();
+    } catch(e) {
+      document.getElementById("encoreLoading").textContent = "Failed to load. Check backend.";
+    }
+  }
+
   // ── RENDER ──
   function renderXperience(filter = "") {
     const abu    = allXperience.filter(r => r.school === 'yes' && matches(r, filter));
@@ -625,22 +529,25 @@
     renderTable('innovate', list, renderInnovateRow, renderInnovateCard);
   }
 
+  // ★ NEW
+  function renderEncore(filter = "") {
+    const list = allEncore.filter(r => matches(r, filter));
+    renderTable('encore', list, renderEncoreRow, renderEncoreCard);
+  }
+
   function renderTable(id, list, rowFn, cardFn) {
     const loading = document.getElementById(id + 'Loading');
     const table   = document.getElementById(id + 'Table');
     const empty   = document.getElementById(id + 'Empty');
     const body    = document.getElementById(id + 'Body');
     const cards   = document.getElementById(id + 'Cards');
-
     if (loading) loading.style.display = "none";
-
     if (list.length === 0) {
       if (table) table.style.display = "none";
       if (empty) empty.style.display = "block";
       if (cards) cards.innerHTML = "";
       return;
     }
-
     if (empty) empty.style.display = "none";
     if (table) table.style.display = "table";
     if (body)  body.innerHTML = list.map((r, i) => rowFn(r, i + 1)).join('');
@@ -657,7 +564,6 @@
       <td><span class="badge badge-abu">ABU Student</span></td>
     </tr>`;
   }
-
   function renderAbuCard(r, i) {
     return `<div class="reg-card">
       <div class="reg-card-name">${esc(r.name)}</div>
@@ -667,7 +573,6 @@
       <div class="reg-card-row"><span>Type</span><span><span class="badge badge-abu">ABU Student</span></span></div>
     </div>`;
   }
-
   function renderNonAbuRow(r, i) {
     return `<tr>
       <td style="color:var(--muted)">${i}</td>
@@ -678,7 +583,6 @@
       <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
     </tr>`;
   }
-
   function renderNonAbuCard(r, i) {
     return `<div class="reg-card">
       <div class="reg-card-name">${esc(r.name)}</div>
@@ -688,7 +592,6 @@
       <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
     </div>`;
   }
-
   function renderInnovateRow(r, i) {
     return `<tr>
       <td style="color:var(--muted)">${i}</td>
@@ -698,7 +601,6 @@
       <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
     </tr>`;
   }
-
   function renderInnovateCard(r, i) {
     return `<div class="reg-card">
       <div class="reg-card-name">${esc(r.name || '—')}</div>
@@ -708,38 +610,58 @@
     </div>`;
   }
 
-  // ── STATS ──
+  // ★ NEW
+  function renderEncoreRow(r, i) {
+    return `<tr>
+      <td style="color:var(--muted)">${i}</td>
+      <td><strong>${esc(r.name || '—')}</strong></td>
+      <td style="color:var(--muted)">${esc(r.email)}</td>
+      <td class="amount">₦${Number(r.amount || 0).toLocaleString()}</td>
+      <td style="color:var(--muted)">${formatDate(r.createdAt)}</td>
+    </tr>`;
+  }
+  function renderEncoreCard(r, i) {
+    return `<div class="reg-card">
+      <div class="reg-card-name">${esc(r.name || '—')}</div>
+      <div class="reg-card-email">${esc(r.email)}</div>
+      <div class="reg-card-row"><span>Amount</span><span class="amount">₦${Number(r.amount || 0).toLocaleString()}</span></div>
+      <div class="reg-card-row"><span>Date</span><span>${formatDate(r.createdAt)}</span></div>
+    </div>`;
+  }
+
+  // ── STATS (now includes Encore) ──
   function updateStats() {
     const abu    = allXperience.filter(r => r.school === 'yes');
     const nonAbu = allXperience.filter(r => r.school === 'no');
     const total  = allXperience.length;
-
-    const revenue = 
-      abu.reduce((s, r)    => s + Number(r.registrationPayment?.amount || 0), 0) +
-      nonAbu.reduce((s, r) => s + Number(r.registrationPayment?.amount || 0), 0) +
-      allInnovate.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const revenue =
+      abu.reduce((s, r)         => s + Number(r.registrationPayment?.amount || 0), 0) +
+      nonAbu.reduce((s, r)      => s + Number(r.registrationPayment?.amount || 0), 0) +
+      allInnovate.reduce((s, r) => s + Number(r.amount || 0), 0) +
+      allEncore.reduce((s, r)   => s + Number(r.amount || 0), 0);   // ★ NEW
 
     document.getElementById("statTotal").textContent    = total;
     document.getElementById("statAbu").textContent      = abu.length;
     document.getElementById("statNonAbu").textContent   = nonAbu.length;
     document.getElementById("statInnovate").textContent = allInnovate.length;
+    document.getElementById("statEncore").textContent   = allEncore.length;   // ★ NEW
     document.getElementById("statRevenue").textContent  = "₦" + revenue.toLocaleString();
   }
 
   // ── TABS ──
-  function switchTab(tab) {
+  function switchTab(tab, event) {
     currentTab = tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event) event.target.classList.add('active');
     document.querySelectorAll('.section-panel[id^="panel-"]').forEach(p => {
       p.classList.toggle('active', p.id === 'panel-' + tab);
     });
   }
 
-  function switchSubTab(sub) {
+  function switchSubTab(sub, event) {
     currentSubTab = sub;
     document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event) event.target.classList.add('active');
     document.getElementById('panel-abu').classList.toggle('active',    sub === 'abu');
     document.getElementById('panel-nonAbu').classList.toggle('active', sub === 'nonAbu');
   }
@@ -749,23 +671,24 @@
     if (type === 'xperience') {
       const q = document.getElementById('xperienceSearch').value.toLowerCase();
       renderXperience(q);
+    } else if (type === 'encore') {
+      const q = document.getElementById('encoreSearch').value.toLowerCase();
+      renderEncore(q);
     } else {
       const q = document.getElementById('innovateSearch').value.toLowerCase();
       renderInnovate(q);
     }
   }
 
+  // ── UTILS ──
   function matches(r, filter) {
     if (!filter) return true;
     return (r.name  || '').toLowerCase().includes(filter) ||
            (r.email || '').toLowerCase().includes(filter);
   }
-
-  // ── UTILS ──
   function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-
   function formatDate(d) {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' });
