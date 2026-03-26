@@ -286,8 +286,12 @@ if (encorePayBtn) {
       fd.append("amount",    "2000");
 
       let result;
-      try {
-        result = await fetchJSON(BACKEND_URL + "/encore-register", { method: "POST", body: fd });
+try {
+  result = await fetchJSON(BACKEND_URL + "/encore-register", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ name, email, reference: paymentRef, amount: 2000 }),
+  });
       } catch (fetchErr) {
         unlockForm(encoreForm);
         if (encorePayGroup) encorePayGroup.style.display = "none";
