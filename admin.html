@@ -633,7 +633,7 @@ INSTRUCTIONS:
   function updateStats() {
     const abu    = allXperience.filter(r => r.school === 'yes');
     const nonAbu = allXperience.filter(r => r.school === 'no');
-    const total  = allXperience.length;
+    const total  = allXperience.length + allEncore.length;
     const revenue =
       abu.reduce((s, r)         => s + Number(r.registrationPayment?.amount || 0), 0) +
       nonAbu.reduce((s, r)      => s + Number(r.registrationPayment?.amount || 0), 0) +
