@@ -1269,8 +1269,8 @@ input, select, textarea { font-size: 16px !important; }
   .hero-title    { font-size: 2.3rem; }
   .hero-meta     { grid-template-columns: minmax(0, 1fr); }
   .hero-actions  { flex-direction: column; }
-  .countdown     { flex-wrap: wrap; justify-content: left; }
-  .countdown-block { min-width: 50px; padding: 0.4rem 0.6rem; }
+  .countdown     {  justify-content: left; }
+  .countdown-block { padding: 0.4rem 0.6rem; }
   .countdown-sep { margin-bottom: 0; }
 
   .form-group input,
