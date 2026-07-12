@@ -457,7 +457,7 @@ app.post("/innovate-pay", async (req, res) => {
                 <tr><td style="background:linear-gradient(135deg,rgba(247,222,80,0.1),rgba(185,154,45,0.05));border:1px solid rgba(247,222,80,0.3);border-radius:12px;padding:24px;">
                   <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Your Registration</p>
                   <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate Pitch — Day 4</td></tr>
+                    <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate Pitch</td></tr>
                     <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦${Number(amount || 0)}</td></tr>
                     <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Payment Reference</td><td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${reference}</td></tr>
                   </table>
@@ -467,8 +467,8 @@ app.post("/innovate-pay", async (req, res) => {
                 <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
                   <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Next Steps</p>
                   <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Day 4 — Lex Innovate</td></tr>
-                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
+                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Pitch Day</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Lex Innovate</td></tr>
+                    <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Faculty of Law, ABU Zaria</td></tr>
                   </table>
                 </td></tr>
               </table>
@@ -638,7 +638,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
               <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
               <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">July 28th - July 31st, 2026</td></tr>
                 <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
               </table>
             </td></tr>
@@ -696,7 +696,7 @@ app.post("/register", upload.single("regNumber"), async (req, res) => {
             <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
               <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
               <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">July 28th - July 31st, 2026</td></tr>
                 <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
               </table>
             </td></tr>
@@ -840,7 +840,7 @@ app.post("/encore-register", async (req, res) => {
               <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Your Ticket</p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;width:45%;">Event</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Lex Encore — Day 2</td></tr>
-                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Date</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">April 1st, 2026</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Date</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">July 28th to July 31st, 2026</td></tr>
                 <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Venue</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
                 <tr><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#9ca3af;">Amount Paid</td><td style="padding:8px 0;border-bottom:1px solid rgba(249,250,251,0.07);font-size:13px;color:#f9fafb;font-weight:600;">₦2,000</td></tr>
                 <tr><td style="padding:8px 0;font-size:13px;color:#9ca3af;">Reference</td><td style="padding:8px 0;font-size:13px;color:#f7de50;font-weight:600;word-break:break-all;">${reference}</td></tr>
@@ -927,7 +927,7 @@ app.post("/admin/confirm-abu", async (req, res) => {
             <tr><td style="background:#141821;border-radius:12px;padding:20px 24px;border:1px solid rgba(249,250,251,0.08);">
               <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#f7de50;text-transform:uppercase;letter-spacing:0.1em;">Event Details</p>
               <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">March 31st – April 4th, 2026</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;width:40%;">Date</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">July 28th - July 31st, 2026</td></tr>
                 <tr><td style="padding:6px 0;font-size:13px;color:#9ca3af;">Venue</td><td style="padding:6px 0;font-size:13px;color:#f9fafb;font-weight:600;">Mahdi Hall, Faculty of Law, ABU Zaria</td></tr>
               </table>
             </td></tr>
