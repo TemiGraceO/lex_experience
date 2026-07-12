@@ -94,7 +94,7 @@ async function fetchJSON(url, options = {}, timeoutMs = 12000) {
 function openPaystack({ email, amount, currency = "NGN" }) {
   return new Promise((resolve, reject) => {
     const handler = PaystackPop.setup({
-      key:      "pk_live_4671a8d0cd02e31339cfe5d157795faa58e2e4ba",
+      key:      "pk_live_3e8b1cbb844946820b411ea1f692e114152d7f50",
       email,
       amount:   amount * 100,   // Paystack expects kobo
       currency,
