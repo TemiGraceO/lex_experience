@@ -1270,7 +1270,7 @@ input, select, textarea { font-size: 16px !important; }
   .hero-meta     { grid-template-columns: minmax(0, 1fr); }
   .hero-actions  { flex-direction: column; }
   .countdown     { flex-wrap: wrap; justify-content: center; }
-  .countdown-block { min-width: 56px; padding: 0.4rem 0.6rem; }
+  .countdown-block { min-width: 80px; padding: 0.4rem 0.6rem; }
   .countdown-sep { margin-bottom: 0; }
 
   .form-group input,
