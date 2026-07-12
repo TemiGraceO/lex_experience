@@ -927,7 +927,7 @@ if (schoolSelectEl) {
 
   // ─── COUNTDOWN TIMER ─────────────────────────────────────
 
-  const eventDate = new Date("2026-03-31T00:00:00+01:00").getTime();
+  const eventDate = new Date("2026-07-28T00:00:00+01:00").getTime();
 
   function updateCountdown() {
     const distance = eventDate - Date.now();
